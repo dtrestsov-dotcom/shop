@@ -99,10 +99,11 @@
   </div>
 </div>
 <script>
-  const PROXY = 'https://functions.yandexcloud.net/d4e8bc8b2ghfd5kgtm3j';
-  const SB_URL = 'https://bhfzkdduwabffqgpcgdt.supabase.co';
+  const PROXY = 'https://yandexcloud.net';
+  const SB_URL = 'https://supabase.co';
   const PUB = 'sb_publishable_0e8FU4Ejk9d_IoLp8bh-zw_oOOQNaI8';
   let jwt = localStorage.getItem('adm_t') || '';
+  let allProducts = [];
 
   async function req(p, opt = {}) {
     const r = await fetch(PROXY, {
@@ -153,15 +154,26 @@
   async function showApp() {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('adminApp').classList.remove('hidden');
+    // Добавляем универсальное поле фасовок и поиск в форму товара
+    const pForm = document.querySelector('#tab-products form');
+    if (pForm && !document.getElementById('pVariantsText')) {
+      const div = document.createElement('div');
+      div.className = 'form-group';
+      div.innerHTML = '<label>Фасовки и цены (формат: 0.5 кг=350, 1 кг=700)</label><input type="text" id="pVariantsText" class="form-control" placeholder="0.5 кг=350, 1 кг=700">';
+      pForm.insertBefore(div, document.getElementById('pPhoto').parentElement);
+      document.getElementById('pPriceHalf').required = false;
+      document.getElementById('pPriceFull').required = false;
+      document.getElementById('pPriceHalf').parentElement.parentElement.style.display = 'none';
+    }
     loadAll();
   }
-
   async function loadAll() {
     const [ords, prods, grps] = await Promise.all([
       req('rest/v1/orders?order=created_at.desc&limit=50'),
       req('rest/v1/products?order=sort_order.asc,id.asc'),
       req('rest/v1/pickup_groups?order=name.asc')
     ]);
+    allProducts = prods || [];
 
     document.getElementById('ordersList').innerHTML = (ords || []).map(o => `
       <div class="card">
@@ -179,16 +191,20 @@
         </div>
       </div>`).join('') || '<p>Заказов пока нет</p>';
 
-    document.getElementById('productsList').innerHTML = (prods || []).map(p => `
-      <div class="card">
+    document.getElementById('productsList').innerHTML = allProducts.map(p => `
+      <div class="card" style="${p.is_active ? '' : 'opacity:0.6;'}">
         <div class="row" style="justify-content:space-between;">
-          <div><b>[${p.id}] ${p.name}</b> <small>(${p.category})</small><br>
-          <small>${(p.variants || []).map(v => `${v.size}: ${v.price}₽`).join(' / ')}</small></div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            ${p.image_url ? `<img src="${p.image_url}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;">` : ''}
+            <div><b>[${p.id}] ${p.name}</b> <small style="color:#6b7280;">(${p.category})</small><br>
+            <small>${(p.variants || []).map(v => `${v.size}: <b>${v.price}₽</b>`).join(' / ')}</small></div>
+          </div>
           <div class="row">
-            <input type="number" step="0.1" id="stk-${p.id}" value="${p.stock_kg}" style="width:68px;padding:6px;border:1px solid #ccc;border-radius:8px;">
+            <input type="number" step="0.1" id="stk-${p.id}" value="${p.stock_kg}" style="width:64px;padding:6px;border:1px solid #ccc;border-radius:8px;">
             <button class="btn sm" onclick="updStk('${p.id}')">Кг ✓</button>
+            <button class="btn sm" style="background:#2563eb;" onclick="editProd('${p.id}')">✏️ Изм.</button>
             <button class="btn sm gray" onclick="togProd('${p.id}',${!p.is_active})">${p.is_active ? 'Скрыть' : 'Показать'}</button>
-            <button class="btn sm" style="background:#dc2626;" onclick="delProd('${p.id}','${p.name.replace(/'/g, '')}')">🗑️</button>
+            <button class="btn sm" style="background:#dc2626;" onclick="delProd('${p.id}')">🗑️</button>
           </div>
         </div>
       </div>`).join('');
@@ -196,6 +212,18 @@
     document.getElementById('groupsList').innerHTML = (grps || []).map(g => `
       <div class="card"><b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
       <small>Сбор: <b>${g.collect_until || '-'}</b> | Выдача: <b>${g.delivery_date || '-'}</b> | ${g.address || ''}</small></div>`).join('');
+  }
+
+  function editProd(id) {
+    const p = allProducts.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('pId').value = p.id;
+    document.getElementById('pCat').value = p.category;
+    document.getElementById('pName').value = p.name;
+    document.getElementById('pDesc').value = p.description || '';
+    document.getElementById('pStock').value = p.stock_kg;
+    document.getElementById('pVariantsText').value = (p.variants || []).map(v => `${v.size}=${v.price}`).join(', ');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function updStk(id) {
@@ -207,19 +235,28 @@
     await req(`rest/v1/products?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ is_active: st }) });
     loadAll();
   }
-  async function delProd(id, name) {
-  if (!confirm(`Удалить товар «${name}» навсегда?`)) return;
-  await req(`rest/v1/products?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
-  loadAll();
-}
+  async function delProd(id) {
+    if (!confirm(`Удалить товар [${id}] навсегда?`)) return;
+    await req(`rest/v1/products?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+    loadAll();
+  }
   async function markDone(id) {
     await req(`rest/v1/orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'completed' }) });
     loadAll();
   }
 
+  function parseVariants(str) {
+    return str.split(',').map(part => {
+      const [sz, pr] = part.split('=').map(s => s.trim());
+      const num = parseFloat((sz || '').replace(',', '.')) || 0.5;
+      const w = (sz || '').includes('гр') || (sz || '').includes('мл') ? num / 1000 : num;
+      return { size: sz || '0.5 кг', price: Number(pr) || 0, weight_kg: w };
+    }).filter(x => x.size);
+  }
+
   async function saveProduct(e) {
     e.preventDefault();
-    const b = document.getElementById('saveProdBtn'); b.textContent = '...';
+    const b = document.getElementById('saveProdBtn'); b.textContent = 'Сохраняем...';
     const id = document.getElementById('pId').value.trim();
     const file = document.getElementById('pPhoto').files[0];
     let img = null;
@@ -233,21 +270,19 @@
         });
         if (up.ok) img = `${SB_URL}/storage/v1/object/public/products/${fn}`;
       }
+      const vText = document.getElementById('pVariantsText').value.trim();
       const pl = {
         id,
         category: document.getElementById('pCat').value.trim(),
         name: document.getElementById('pName').value.trim(),
         description: document.getElementById('pDesc').value.trim(),
         stock_kg: parseFloat(document.getElementById('pStock').value) || 0,
-        variants: [
-          { size: '0.5 кг', price: Number(document.getElementById('pPriceHalf').value), weight_kg: 0.5 },
-          { size: '1 кг', price: Number(document.getElementById('pPriceFull').value), weight_kg: 1 }
-        ],
+        variants: vText ? parseVariants(vText) : [{ size: '0.5 кг', price: 0, weight_kg: 0.5 }],
         is_active: true
       };
       if (img) pl.image_url = img;
       await req('rest/v1/products', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: JSON.stringify(pl) });
-      alert('✅ Сохранено!'); e.target.reset(); loadAll();
+      alert('✅ Товар сохранен!'); e.target.reset(); loadAll();
     } catch (err) { alert(err.message); } finally { b.textContent = 'Сохранить товар'; }
   }
 
