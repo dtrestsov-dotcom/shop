@@ -208,7 +208,7 @@
 
   function renderProducts() {
     const q = document.getElementById('searchInput').value.toLowerCase().trim();
-    const ph = 'data:image/svg+xml;utf8,<svg xmlns="http://w3.org" width="300" height="300" fill="%23e5e7eb"><rect width="300" height="300"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="48">🥜</text></svg>';
+    const ph = '';
     document.getElementById('productsGrid').innerHTML = products
       .filter(p => (activeCategory === 'Все' || p.category === activeCategory) && (p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)))
       .map(p => {
