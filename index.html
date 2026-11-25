@@ -6,9 +6,6 @@
   <meta name="theme-color" content="#2e7d32">
   <link rel="manifest" href="manifest.json">
   <title>Орехи и Сухофрукты</title>
-  <script src="https://telegram.org"></script>
-  <script src="https://unpkg.com"></script>
-  <script src="https://jsdelivr.net"></script>
   <style>
     :root {
       --bg: #f6f5f2; --card: #ffffff; --text: #1f2421; --muted: #6b7280;
@@ -28,7 +25,7 @@
     .search-row { display: flex; gap: 8px; }
     .search-input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; font-size: 15px; background: #f9fafb; outline: none; }
 
-    .cats { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px 0; scrollbar-width: none; }
+    .cats { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 2px; scrollbar-width: none; }
     .cat-chip { padding: 6px 14px; border-radius: 20px; background: #fff; border: 1px solid var(--border); font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; }
     .cat-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
@@ -38,7 +35,7 @@
 
     .card { background: var(--card); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
     .card-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #eee; }
-    .card-body { padding: 12px; display: flex; flex-direction: column; flex: 1; }
+    .card-body { padding: 12px; display: flex; flex-direction: column; flex-1: 1; flex: 1; }
     .card-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .card-stock { font-size: 12px; color: var(--accent); margin-bottom: 6px; font-weight: 600; }
     .card-stock.out { color: #dc2626; }
@@ -74,6 +71,7 @@
     .cart-bar.hidden { display: none; }
     .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
     .qty-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border); background: #fff; font-weight: 700; cursor: pointer; }
+    .status-msg { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 14px; }
   </style>
 </head>
 <body>
@@ -95,6 +93,7 @@
 </div>
 
 <div class="container">
+  <div id="statusMsg" class="status-msg">Загружаем витрину...</div>
   <div class="grid" id="productsGrid"></div>
 </div>
 
@@ -103,6 +102,7 @@
   <span id="cartTotal">0 ₽ →</span>
 </div>
 
+<!-- ОКНО АВТОРИЗАЦИИ -->
 <div class="modal" id="authModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -111,10 +111,10 @@
     </div>
     <p style="font-size:13px; color:var(--muted); margin-bottom:14px;">Войдите в один клик, чтобы сохранять заказы и получать уведомления о выдаче:</p>
     
-    <button class="auth-btn max" onclick="loginViaMessenger('max')">💬 Войти через MAX</button>
-    <button class="auth-btn tg" onclick="loginViaMessenger('telegram')">✈️ Войти через Telegram</button>
-    <button class="auth-btn vk" onclick="loginViaVK()">🔵 Войти с VK ID</button>
-    <button class="auth-btn yandex" onclick="loginViaYandex()">🔴 Войти с Яндекс ID</button>
+    <button class="auth-btn max" onclick="loginViaMessenger('MAX')">💬 Войти через MAX</button>
+    <button class="auth-btn tg" onclick="loginViaMessenger('Telegram')">✈️ Войти через Telegram</button>
+    <button class="auth-btn vk" onclick="loginViaOAuth('vk')">🔵 Войти с VK ID</button>
+    <button class="auth-btn yandex" onclick="loginViaOAuth('yandex')">🔴 Войти с Яндекс ID</button>
 
     <div class="divider">или по номеру телефона</div>
     <div class="form-group">
@@ -127,6 +127,7 @@
   </div>
 </div>
 
+<!-- ОКНО КОРЗИНЫ -->
 <div class="modal" id="cartModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -157,13 +158,26 @@
       </div>
       <div class="form-group">
         <label>Комментарий</label>
-        <input type="text" class="form-control" id="clientComment" placeholder="Пожелания к заказу">
 Оформить заказ
-
-
+// ВАШИ КЛЮЧИ SUPABASE:
 const SUPABASE_URL = 'supabase.co';
-const SUPABASE_ANON_KEY = 'ВСТАВЬТЕ_СЮДА_ВАШ_PUBLISHABLE_KEY';
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_ANON_KEY = '0e8FU4Ejk9d_IoLp8bh-zw_oOOQNaI8';
+// Прямой клиент REST API без сторонних CDN
+async function sbFetch(path, options = {}) {
+const headers = {
+'apikey': SUPABASE_ANON_KEY,
+'Authorization': Bearer ${SUPABASE_ANON_KEY},
+'Content-Type': 'application/json',
+...(options.headers || {})
+};
+const res = await fetch(${SUPABASE_URL}/rest/v1/${path}, { ...options, headers });
+if (!res.ok) {
+const errText = await res.text();
+throw new Error(errText);
+}
+const text = await res.text();
+return text ? JSON.parse(text) : null;
+}
 let products = [];
 let groups = [];
 let activeCategory = 'Все';
@@ -182,63 +196,78 @@ document.getElementById('installPwaBtn').style.display = 'inline-block';
 function installPWA() {
 if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
 }
+// Автоопределение MAX / Telegram / VK без внешних скриптов
 async function detectMessengerEnvironment() {
 if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
 const u = window.Telegram.WebApp.initDataUnsafe.user;
 window.Telegram.WebApp.ready();
 window.Telegram.WebApp.expand();
-await syncProfile({ telegram_id: String(u.id), full_name: ${u.first_name || ''} ${u.last_name || ''}.trim() });
+await syncProfile({ telegram_id: String(), full_name: ${u.first_name || ''} ${u.last_name || ''}.trim() });
 return;
 }
 if (window.WebApp?.initDataUnsafe?.user) {
 const u = window.WebApp.initDataUnsafe.user;
-await syncProfile({ max_id: String(u.id), full_name: ${u.first_name || ''} ${u.last_name || ''}.trim() });
+await syncProfile({ max_id: String(), full_name: ${u.first_name || ''} ${u.last_name || ''}.trim() });
 return;
 }
-if (window.vkBridge && window.location.search.includes('vk_user_id')) {
-window.vkBridge.send('VKWebAppInit');
-const u = await window.vkBridge.send('VKWebAppGetUserInfo');
-await syncProfile({ vk_id: String(u.id), full_name: ${u.first_name} ${u.last_name}.trim() });
+const vkId = new URLSearchParams().get('vk_user_id');
+if (vkId) {
+await syncProfile({ vk_id: String(vkId) });
 }
 }
 async function syncProfile(userData) {
 const queryCol = userData.telegram_id ? 'telegram_id' : userData.max_id ? 'max_id' : userData.vk_id ? 'vk_id' : 'phone';
 const queryVal = userData[queryCol];
 if (!queryVal) return;
-let { data: profile } = await db.from('profiles').select('*').eq(queryCol, queryVal).maybeSingle();
+try {
+const existing = await sbFetch(profiles?${queryCol}=eq.${encodeURIComponent(queryVal)}&select=*);
+let profile = existing && existing[0];
 if (!profile) {
-const { data: created } = await db.from('profiles').insert(userData).select().single();
-profile = created;
+const created = await sbFetch('profiles', {
+method: 'POST',
+headers: { 'Prefer': 'return=representation' },
+body: JSON.stringify(userData)
+});
+profile = created && created[0];
 }
 if (profile) {
 currentUser = profile;
 localStorage.setItem('nut_user', JSON.stringify(profile));
 updateUserUI();
 }
+} catch (e) { console.warn('Sync profile:', e); }
 }
 function updateUserUI() {
 if (!currentUser) return;
-document.getElementById('authBadge').textContent = '👤 ' + (currentUser.full_name || currentUser.phone || 'Профиль');
+document.getElementById('authBadge').textContent = '👤 ' + (currentUser.full_name ||  || 'Профиль');
 if (currentUser.full_name) document.getElementById('clientName').value = currentUser.full_name;
-if (currentUser.phone) document.getElementById('clientPhone').value = currentUser.phone;
+if () document.getElementById('clientPhone').value = currentUser.phone;
 }
 async function init() {
+const statusEl = document.getElementById('statusMsg');
+try {
 await detectMessengerEnvironment();
 updateUserUI();
-const [{ data: prods }, { data: grps }] = await Promise.all([
-db.from('products').select('').eq('is_active', true).order('sort_order'),
-db.from('pickup_groups').select('').eq('is_active', true)
+const [prods, grps] = await Promise.all([
+sbFetch('products?is_active=eq.true&order=sort_order.asc'),
+sbFetch('pickup_groups?is_active=eq.true')
 ]);
 products = prods || [];
 groups = grps || [];
-products.forEach(p => { selectedVariants[p.id] = 0; });
+products.forEach(p => { selectedVariants[] = 0; });
+statusEl.style.display = products.length ? 'none' : 'block';
+if (!products.length) statusEl.textContent = 'В базе пока нет активных товаров. Добавьте их через SQL или админку.';
 renderCategories();
 populateGroups();
 renderProducts();
+} catch (err) {
+statusEl.style.display = 'block';
+statusEl.innerHTML = Ошибка загрузки базы:<br><small>${err.message}</small>;
+}
 }
 function renderCategories() {
-const cats = ['Все', ...new Set(products.map(p => p.category))];
-document.getElementById('catsBar').innerHTML = cats.map(c =>
+const cats = ['Все', ...new Set((p => p.category))];
+document.getElementById('catsBar').innerHTML = (c =>
 <div class="cat-chip ${c === activeCategory ? 'active' : ''}" onclick="setCategory('${c}')">${c}</div>
 ).join('');
 }
@@ -250,18 +279,18 @@ renderProducts();
 function populateGroups() {
 const select = document.getElementById('groupSelect');
 select.innerHTML = '-- Выберите вашу группу --' +
-groups.map(g => <option value="${g.id}">${g.name}</option>).join('');
-const urlGroup = new URLSearchParams(window.location.search).get('group') || currentUser?.default_group_id;
-if (urlGroup && groups.some(g => g.id === urlGroup)) select.value = urlGroup;
+(g => <option value="${g.id}">${g.name}</option>).join('');
+const urlGroup = new URLSearchParams().get('group') || currentUser?.default_group_id;
+if (urlGroup && groups.some(g =>  === urlGroup)) select.value = urlGroup;
 onGroupChange();
 }
 function onGroupChange() {
 const gId = document.getElementById('groupSelect').value;
-const group = groups.find(g => g.id === gId);
+const group = groups.find(g =>  === gId);
 const badge = document.getElementById('groupBadge');
 const banner = document.getElementById('deliveryBanner');
 if (group) {
-badge.textContent = group.name;
+badge.textContent = ;
 banner.innerHTML = 📍 <b>${group.name}</b> (${group.address || ''})<br>Сбор до: <b>${group.collect_until}</b> • Выдача: <b>${group.delivery_date}</b>;
 } else {
 badge.textContent = 'Выбрать группу';
@@ -275,19 +304,20 @@ grid.innerHTML = products
 .filter(p => (activeCategory === 'Все' || p.category === activeCategory) &&
 (p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)))
 .map(p => {
-const vIdx = selectedVariants[p.id] || 0;
+const vIdx = selectedVariants[] || 0;
 const v = p.variants[vIdx];
 const inStock = Number(p.stock_kg) > 0;
-return <div class="card"> <img class="card-img" src="${p.image_url || 'https://placehold.co'}" alt="${p.name}" loading="lazy"> <div class="card-body"> <div class="card-title">${p.name}</div> <div class="card-stock ${inStock ? '' : 'out'}">${inStock ?В наличии: ${p.stock_kg} кг: 'Нет в наличии'}</div> <div class="card-desc">${p.description || ''}</div> <div class="variants"> ${p.variants.map((item, i) =>${item.size}).join('')} </div> <div class="card-footer"> <div class="price">${v.price} ₽</div> <button class="add-btn" ${inStock ? '' : 'disabled'} onclick="addToCart('${p.id}')">В корзину</button> </div> </div> </div>;
+const placeholderImg = 'data:image/svg+xml;utf8,🥜';
+return <div class="card"> <img class="card-img" src="${p.image_url || placeholderImg}" alt="${p.name}" loading="lazy"> <div class="card-body"> <div class="card-title">${p.name}</div> <div class="card-stock ${inStock ? '' : 'out'}">${inStock ?В наличии: ${p.stock_kg} кг: 'Нет в наличии'}</div> <div class="card-desc">${p.description || ''}</div> <div class="variants"> ${p.variants.map((item, i) =>${item.size}).join('')} </div> <div class="card-footer"> <div class="price">${v.price} ₽</div> <button class="add-btn" ${inStock ? '' : 'disabled'} onclick="addToCart('${p.id}')">В корзину</button> </div> </div> </div>;
 }).join('');
 }
 function selectVariant(id, idx) { selectedVariants[id] = idx; renderProducts(); }
 function addToCart(id) {
-const p = products.find(x => x.id === id);
+const p = products.find(x =>  === id);
 const v = p.variants[selectedVariants[id] || 0];
-const ex = cart.find(c => c.id === id && c.size === v.size);
+const ex = cart.find(c =>  === id && c.size === v.size);
 if (ex) ex.qty++;
-else cart.push({ id: p.id, name: p.name, size: v.size, price: v.price, weight_kg: v.weight_kg, qty: 1 });
+else cart.push({ id: , name: , size: v.size, price: v.price, weight_kg: v.weight_kg, qty: 1 });
 updateCartBar();
 }
 function updateCartBar() {
@@ -303,7 +333,7 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 function renderCartItems() {
 const list = document.getElementById('cartItemsList');
 if (!cart.length) { list.innerHTML = 'Корзина пуста'; return; }
-list.innerHTML = cart.map((item, idx) =>  <div class="cart-item"> <div><b>${item.name}</b> (${item.size})<br><span style="font-size:13px;color:#6b7280;">${item.price} ₽ × ${item.qty} = ${item.price * item.qty} ₽</span></div> <div style="display:flex;gap:8px;align-items:center;"> <button class="qty-btn" onclick="changeQty(${idx}, -1)">-</button> <span>${item.qty}</span> <button class="qty-btn" onclick="changeQty(${idx}, 1)">+</button> </div> </div>).join('');
+list.innerHTML = ((item, idx) =>  <div class="cart-item"> <div><b>${item.name}</b> (${item.size})<br><span style="font-size:13px;color:#6b7280;">${item.price} ₽ × ${item.qty} = ${item.price * item.qty} ₽</span></div> <div style="display:flex;gap:8px;align-items:center;"> <button class="qty-btn" onclick="changeQty(${idx}, -1)">-</button> <span>${item.qty}</span> <button class="qty-btn" onclick="changeQty(${idx}, 1)">+</button> </div> </div>).join('');
 }
 function changeQty(idx, d) {
 cart[idx].qty += d;
@@ -319,10 +349,11 @@ await syncProfile({ phone, full_name: name });
 closeModal('authModal');
 }
 function loginViaMessenger(type) {
-alert(Для автоматического входа в 1 клик откройте витрину через кнопку меню вашего бота в ${type === 'max' ? 'MAX' : 'Telegram'}.);
+alert(Для входа в 1 клик откройте витрину через кнопку меню вашего бота в ${type}.);
 }
-function loginViaVK() { db.auth.signInWithOAuth({ provider: 'vk' }); }
-function loginViaYandex() { alert('Подключите Client ID Яндекс OAuth в настройках Supabase Auth.'); }
+function loginViaOAuth(provider) {
+window.location.href = ${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(window.location.href)};
+}
 async function submitOrder(e) {
 e.preventDefault();
 if (!cart.length) return alert('Корзина пуста');
@@ -332,8 +363,11 @@ const gId = document.getElementById('groupSelect').value;
 const name = document.getElementById('clientName').value.trim();
 const phone = document.getElementById('clientPhone').value.trim();
 const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+try {
 if (!currentUser) await syncProfile({ phone, full_name: name, default_group_id: gId });
-const { data, error } = await db.rpc('create_order_and_deduct_stock', {
+const data = await sbFetch('rpc/create_order_and_deduct_stock', {
+method: 'POST',
+body: JSON.stringify({
 p_user_id: currentUser?.id || null,
 p_group_id: gId,
 p_name: name,
@@ -342,13 +376,20 @@ p_items: cart,
 p_total: total,
 p_payment: document.getElementById('paymentSelect').value,
 p_comment: document.getElementById('clientComment').value.trim()
+})
 });
-btn.disabled = false; btn.textContent = 'Оформить заказ';
-if (error) return alert('Ошибка: ' + error.message);
 alert(✅ Заказ ${data.order_number} оформлен на сумму ${total} ₽!);
 cart = [];
 updateCartBar();
 closeModal('cartModal');
 init();
+} catch (err) {
+alert('Ошибка при оформлении: ' + err.message);
+} finally {
+btn.disabled = false;
+btn.textContent = 'Оформить заказ';
+}
 }
 init();
+
+
