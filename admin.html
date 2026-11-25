@@ -30,7 +30,6 @@
   </style>
 </head>
 <body>
-
 <div id="loginScreen" class="login-box">
   <h2 style="margin-bottom:16px; text-align:center;">🔐 Вход в управление</h2>
   <form onsubmit="adminLogin(event)">
@@ -52,14 +51,8 @@
     <div class="tab" onclick="switchTab('products', this)">🥜 Товары и склад</div>
     <div class="tab" onclick="switchTab('groups', this)">📍 Группы и даты</div>
   </div>
-
   <div class="container">
-    <!-- ВКЛАДКА 1: ЗАКАЗЫ -->
-    <div id="tab-orders">
-      <div id="ordersList">Загружаем заказы...</div>
-    </div>
-
-    <!-- ВКЛАДКА 2: ТОВАРЫ И СКЛАД -->
+    <div id="tab-orders"><div id="ordersList">Загружаем заказы...</div></div>
     <div id="tab-products" class="hidden">
       <div class="card">
         <h3 style="margin-bottom:10px; font-size:15px;">➕ Добавить / Обновить товар</h3>
@@ -68,37 +61,35 @@
             <div class="form-group" style="flex:1;"><label>Артикул (id)*</label><input type="text" id="pId" class="form-control" placeholder="01025" required></div>
             <div class="form-group" style="flex:2;"><label>Категория*</label><input type="text" id="pCat" class="form-control" value="Орехи" required></div>
           </div>
-          <div class="form-group"><label>Название товара*</label><input type="text" id="pName" class="form-control" placeholder="Грецкий орех бабочка" required></div>
-          <div class="form-group"><label>Описание</label><input type="text" id="pDesc" class="form-control" placeholder="Свежий урожай, без горечи"></div>
+          <div class="form-group"><label>Название товара*</label><input type="text" id="pName" class="form-control" required></div>
+          <div class="form-group"><label>Описание</label><input type="text" id="pDesc" class="form-control"></div>
           <div class="row">
             <div class="form-group" style="flex:1;"><label>Остаток (кг)*</label><input type="number" step="0.01" id="pStock" class="form-control" value="10" required></div>
-            <div class="form-group" style="flex:1;"><label>Цена 0.5 кг (₽)*</label><input type="number" id="pPriceHalf" class="form-control" required></div>
-            <div class="form-group" style="flex:1;"><label>Цена 1 кг (₽)*</label><input type="number" id="pPriceFull" class="form-control" required></div>
+            <div class="form-group" style="flex:1;"><label>Цена 0.5 кг*</label><input type="number" id="pPriceHalf" class="form-control" required></div>
+            <div class="form-group" style="flex:1;"><label>Цена 1 кг*</label><input type="number" id="pPriceFull" class="form-control" required></div>
           </div>
-          <div class="form-group"><label>Фото товара (с телефона или ПК)</label><input type="file" id="pPhoto" accept="image/*" class="form-control"></div>
+          <div class="form-group"><label>Фото товара</label><input type="file" id="pPhoto" accept="image/*" class="form-control"></div>
           <button type="submit" class="btn" id="saveProdBtn">Сохранить товар</button>
         </form>
       </div>
       <div id="productsList"></div>
     </div>
-
-    <!-- ВКЛАДКА 3: ГРУППЫ И ДАТЫ ВЫДАЧИ -->
     <div id="tab-groups" class="hidden">
       <div class="card">
         <h3 style="margin-bottom:10px; font-size:15px;">➕ Добавить / Изменить группу</h3>
         <form onsubmit="saveGroup(event)">
           <div class="row">
             <div class="form-group" style="flex:1;"><label>Код (лат.)*</label><input type="text" id="gId" class="form-control" placeholder="solnechnii" required></div>
-            <div class="form-group" style="flex:2;"><label>Название группы*</label><input type="text" id="gName" class="form-control" placeholder='Район "Солнечный"' required></div>
+            <div class="form-group" style="flex:2;"><label>Название группы*</label><input type="text" id="gName" class="form-control" required></div>
           </div>
           <div class="row">
-            <div class="form-group" style="flex:1;"><label>Сбор заявок до</label><input type="text" id="gCollect" class="form-control" placeholder="26.11.2026 до 20:00"></div>
-            <div class="form-group" style="flex:1;"><label>Дата и время выдачи</label><input type="text" id="gDelivery" class="form-control" placeholder="29.11.2026 с 18:00 до 20:00"></div>
+            <div class="form-group" style="flex:1;"><label>Сбор до</label><input type="text" id="gCollect" class="form-control" placeholder="26.11.2026 до 20:00"></div>
+            <div class="form-group" style="flex:1;"><label>Дата выдачи</label><input type="text" id="gDelivery" class="form-control" placeholder="29.11.2026 с 18:00"></div>
           </div>
-          <div class="form-group"><label>Адрес выдачи</label><input type="text" id="gAddress" class="form-control" placeholder="ул. Лучистая, 12"></div>
+          <div class="form-group"><label>Адрес выдачи</label><input type="text" id="gAddress" class="form-control"></div>
           <div class="row">
-            <div class="form-group" style="flex:1;"><label>ID чата MAX</label><input type="text" id="gMax" class="form-control" placeholder="-686600..."></div>
-            <div class="form-group" style="flex:1;"><label>ID чата Telegram</label><input type="text" id="gTg" class="form-control" placeholder="-100180..."></div>
+            <div class="form-group" style="flex:1;"><label>ID чата MAX</label><input type="text" id="gMax" class="form-control"></div>
+            <div class="form-group" style="flex:1;"><label>ID чата Telegram</label><input type="text" id="gTg" class="form-control"></div>
           </div>
           <button type="submit" class="btn">Сохранить группу</button>
         </form>
@@ -108,58 +99,55 @@
   </div>
 </div>
 <script>
-  const SUPABASE_URL = 'https://supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoZnprZGR1d2FiZmZxZ3BjZ2R0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MDc4MTQsImV4cCI6MjA5MTM4MzgxNH0.d6z5yB1wI7e1Y45eJzdXBhYmFzZSI6InJlZiI6ImJoZnprZGR1';
-  const PUB_KEY = 'sb_publishable_0e8FU4Ejk9d_IoLp8bh-zw_oOOQNaI8';
+  const PROXY = 'https://yandexcloud.net';
+  const SB_URL = 'https://supabase.co';
+  const PUB = 'sb_publishable_0e8FU4Ejk9d_IoLp8bh-zw_oOOQNaI8';
+  let jwt = localStorage.getItem('adm_t') || '';
 
-  let token = localStorage.getItem('admin_jwt') || '';
-
-  async function api(path, options = {}) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-      ...options,
+  async function req(p, opt = {}) {
+    const r = await fetch(PROXY, {
+      ...opt,
       headers: {
-        'apikey': PUB_KEY,
-        'Authorization': `Bearer ${token}`,
+        'apikey': PUB,
+        'Authorization': 'Bearer ' + jwt,
         'Content-Type': 'application/json',
-        ...(options.headers || {})
+        'X-Proxy-Path': p,
+        ...(opt.headers || {})
       }
     });
-    if (res.status === 401) { adminLogout(); throw new Error('Сессия истекла, войдите снова'); }
-    if (!res.ok) throw new Error(await res.text());
-    const t = await res.text();
+    if (r.status === 401) { adminLogout(); throw new Error('Войдите заново'); }
+    if (!r.ok) throw new Error(await r.text());
+    const t = await r.text();
     return t ? JSON.parse(t) : null;
   }
 
   async function adminLogin(e) {
     e.preventDefault();
-    const btn = document.getElementById('loginBtn'); btn.textContent = 'Входим...';
+    const b = document.getElementById('loginBtn'); b.textContent = '...';
     try {
-      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      const r = await fetch(PROXY, {
         method: 'POST',
-        headers: { 'apikey': PUB_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: document.getElementById('loginEmail').value.trim(),
-          password: document.getElementById('loginPass').value
-        })
+        headers: { 'apikey': PUB, 'Content-Type': 'application/json', 'X-Proxy-Path': 'auth/v1/token?grant_type=password' },
+        body: JSON.stringify({ email: document.getElementById('loginEmail').value.trim(), password: document.getElementById('loginPass').value })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error_description || data.msg || 'Неверный логин или пароль');
-      token = data.access_token;
-      localStorage.setItem('admin_jwt', token);
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error_description || d.msg || 'Ошибка входа');
+      jwt = d.access_token;
+      localStorage.setItem('adm_t', jwt);
       showApp();
-    } catch (err) { alert(err.message); } finally { btn.textContent = 'Войти в панель'; }
+    } catch (err) { alert(err.message); } finally { b.textContent = 'Войти в панель'; }
   }
 
   function adminLogout() {
-    token = ''; localStorage.removeItem('admin_jwt');
+    jwt = ''; localStorage.removeItem('adm_t');
     document.getElementById('adminApp').classList.add('hidden');
     document.getElementById('loginScreen').classList.remove('hidden');
   }
 
-  function switchTab(name, el) {
+  function switchTab(n, el) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
-    ['orders', 'products', 'groups'].forEach(id => document.getElementById('tab-' + id).classList.toggle('hidden', id !== name));
+    ['orders', 'products', 'groups'].forEach(i => document.getElementById('tab-' + i).classList.toggle('hidden', i !== n));
   }
 
   async function showApp() {
@@ -169,86 +157,77 @@
   }
 
   async function loadAll() {
-    try {
-      const [orders, products, groups] = await Promise.all([
-        api('orders?order=created_at.desc&limit=50'),
-        api('products?order=sort_order.asc,id.asc'),
-        api('pickup_groups?order=name.asc')
-      ]);
+    const [ords, prods, grps] = await Promise.all([
+      req('rest/v1/orders?order=created_at.desc&limit=50'),
+      req('rest/v1/products?order=sort_order.asc,id.asc'),
+      req('rest/v1/pickup_groups?order=name.asc')
+    ]);
 
-      document.getElementById('ordersList').innerHTML = (orders || []).map(o => `
-        <div class="card">
-          <div class="row" style="justify-content:space-between; margin-bottom:6px;">
-            <b>${o.order_number}</b>
-            <span class="badge ${o.status === 'new' ? 'new' : ''}">${o.status === 'new' ? 'Новый' : 'Выдан'}</span>
-          </div>
-          <div style="font-size:13px; margin-bottom:6px;">📍 Группа: <b>${o.group_id}</b> | 👤 ${o.customer_name} (${o.customer_phone})</div>
-          <div style="font-size:12px; background:#f9fafb; padding:8px; border-radius:8px; margin-bottom:8px;">
-            ${(o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} шт. = ${i.price * i.qty} ₽`).join('<br>')}
-          </div>
-          <div class="row" style="justify-content:space-between;">
-            <b>Итого: ${o.total_amount} ₽ (${o.payment_method})</b>
-            ${o.status === 'new' ? `<button class="btn sm" onclick="markDone(${o.id})">Отметить выданным</button>` : ''}
-          </div>
-        </div>`).join('') || '<p>Заказов пока нет</p>';
+    document.getElementById('ordersList').innerHTML = (ords || []).map(o => `
+      <div class="card">
+        <div class="row" style="justify-content:space-between;margin-bottom:6px;">
+          <b>${o.order_number}</b>
+          <span class="badge ${o.status === 'new' ? 'new' : ''}">${o.status === 'new' ? 'Новый' : 'Выдан'}</span>
+        </div>
+        <div style="font-size:13px;margin-bottom:6px;">📍 <b>${o.group_id}</b> | 👤 ${o.customer_name} (${o.customer_phone})</div>
+        <div style="font-size:12px;background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:8px;">
+          ${(o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} = ${i.price * i.qty} ₽`).join('<br>')}
+        </div>
+        <div class="row" style="justify-content:space-between;">
+          <b>Итого: ${o.total_amount} ₽ (${o.payment_method})</b>
+          ${o.status === 'new' ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : ''}
+        </div>
+      </div>`).join('') || '<p>Заказов пока нет</p>';
 
-      document.getElementById('productsList').innerHTML = (products || []).map(p => `
-        <div class="card">
-          <div class="row" style="justify-content:space-between;">
-            <div><b>[${p.id}] ${p.name}</b> <small style="color:#6b7280;">(${p.category})</small><br>
-            <small>Цены: ${(p.variants || []).map(v => `${v.size}: ${v.price}₽`).join(' / ')}</small></div>
-            <div class="row">
-              <input type="number" step="0.1" id="stk-${p.id}" value="${p.stock_kg}" style="width:70px; padding:6px; border:1px solid #ccc; border-radius:8px;">
-              <button class="btn sm" onclick="updateStock('${p.id}')">Кг ✓</button>
-              <button class="btn sm gray" onclick="toggleProd('${p.id}', ${!p.is_active})">${p.is_active ? 'Скрыть' : 'Показать'}</button>
-            </div>
+    document.getElementById('productsList').innerHTML = (prods || []).map(p => `
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <div><b>[${p.id}] ${p.name}</b> <small>(${p.category})</small><br>
+          <small>${(p.variants || []).map(v => `${v.size}: ${v.price}₽`).join(' / ')}</small></div>
+          <div class="row">
+            <input type="number" step="0.1" id="stk-${p.id}" value="${p.stock_kg}" style="width:68px;padding:6px;border:1px solid #ccc;border-radius:8px;">
+            <button class="btn sm" onclick="updStk('${p.id}')">Кг ✓</button>
+            <button class="btn sm gray" onclick="togProd('${p.id}',${!p.is_active})">${p.is_active ? 'Скрыть' : 'Показать'}</button>
           </div>
-        </div>`).join('');
+        </div>
+      </div>`).join('');
 
-      document.getElementById('groupsList').innerHTML = (groups || []).map(g => `
-        <div class="card">
-          <b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
-          <small>Сбор до: <b>${g.collect_until || '-'}</b> | Выдача: <b>${g.delivery_date || '-'}</b> | Адрес: ${g.address || '-'}</small>
-        </div>`).join('');
-    } catch (e) { console.error(e); }
+    document.getElementById('groupsList').innerHTML = (grps || []).map(g => `
+      <div class="card"><b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
+      <small>Сбор: <b>${g.collect_until || '-'}</b> | Выдача: <b>${g.delivery_date || '-'}</b> | ${g.address || ''}</small></div>`).join('');
   }
 
-  async function updateStock(id) {
-    const val = parseFloat(document.getElementById('stk-' + id).value) || 0;
-    await api(`products?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ stock_kg: val }) });
+  async function updStk(id) {
+    const v = parseFloat(document.getElementById('stk-' + id).value) || 0;
+    await req(`rest/v1/products?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ stock_kg: v }) });
     alert('Остаток обновлен!');
   }
-
-  async function toggleProd(id, state) {
-    await api(`products?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ is_active: state }) });
+  async function togProd(id, st) {
+    await req(`rest/v1/products?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ is_active: st }) });
     loadAll();
   }
-
   async function markDone(id) {
-    await api(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'completed' }) });
+    await req(`rest/v1/orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'completed' }) });
     loadAll();
   }
 
   async function saveProduct(e) {
     e.preventDefault();
-    const btn = document.getElementById('saveProdBtn'); btn.textContent = 'Сохраняем...';
+    const b = document.getElementById('saveProdBtn'); b.textContent = '...';
     const id = document.getElementById('pId').value.trim();
     const file = document.getElementById('pPhoto').files;
-    let imageUrl = null;
-
+    let img = null;
     try {
       if (file) {
-        const ext = file.name.split('.').pop();
-        const fileName = `${id}_${Date.now()}.${ext}`;
-        const upRes = await fetch(`${SUPABASE_URL}/storage/v1/object/products/${fileName}`, {
+        const fn = `${id}_${Date.now()}.${file.name.split('.').pop()}`;
+        const up = await fetch(PROXY, {
           method: 'POST',
-          headers: { 'apikey': PUB_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': file.type },
+          headers: { 'apikey': PUB, 'Authorization': 'Bearer ' + jwt, 'Content-Type': file.type, 'X-Proxy-Path': `storage/v1/object/products/${fn}` },
           body: file
         });
-        if (upRes.ok) imageUrl = `${SUPABASE_URL}/storage/v1/object/public/products/${fileName}`;
+        if (up.ok) img = `${SB_URL}/storage/v1/object/public/products/${fn}`;
       }
-
-      const payload = {
+      const pl = {
         id,
         category: document.getElementById('pCat').value.trim(),
         name: document.getElementById('pName').value.trim(),
@@ -260,18 +239,15 @@
         ],
         is_active: true
       };
-      if (imageUrl) payload.image_url = imageUrl;
-
-      await api('products', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: JSON.stringify(payload) });
-      alert('✅ Товар сохранен!');
-      e.target.reset();
-      loadAll();
-    } catch (err) { alert('Ошибка: ' + err.message); } finally { btn.textContent = 'Сохранить товар'; }
+      if (img) pl.image_url = img;
+      await req('rest/v1/products', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: JSON.stringify(pl) });
+      alert('✅ Сохранено!'); e.target.reset(); loadAll();
+    } catch (err) { alert(err.message); } finally { b.textContent = 'Сохранить товар'; }
   }
 
   async function saveGroup(e) {
     e.preventDefault();
-    const payload = {
+    const pl = {
       id: document.getElementById('gId').value.trim(),
       name: document.getElementById('gName').value.trim(),
       collect_until: document.getElementById('gCollect').value.trim(),
@@ -282,14 +258,12 @@
       is_active: true
     };
     try {
-      await api('pickup_groups', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: JSON.stringify(payload) });
-      alert('✅ Группа сохранена!');
-      e.target.reset();
-      loadAll();
-    } catch (err) { alert('Ошибка: ' + err.message); }
+      await req('rest/v1/pickup_groups', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: JSON.stringify(pl) });
+      alert('✅ Группа сохранена!'); e.target.reset(); loadAll();
+    } catch (err) { alert(err.message); }
   }
 
-  if (token) showApp();
+  if (jwt) showApp();
 </script>
 </body>
 </html>
