@@ -100,7 +100,7 @@
 </div>
 <script>
   const PROXY = 'https://functions.yandexcloud.net/d4e8bc8b2ghfd5kgtm3j';
-  const SB_URL = 'https://supabase.co';
+  const SB_URL = 'https://bhfzkdduwabffqgpcgdt.supabase.co';
   const PUB = 'sb_publishable_0e8FU4Ejk9d_IoLp8bh-zw_oOOQNaI8';
   let jwt = localStorage.getItem('adm_t') || '';
 
@@ -109,7 +109,7 @@
       ...opt,
       headers: {
         'apikey': PUB,
-        'Authorization': 'Bearer ' + jwt,
+        'X-Admin-Token': 'Bearer ' + jwt,
         'Content-Type': 'application/json',
         'X-Proxy-Path': p,
         ...(opt.headers || {})
@@ -215,14 +215,14 @@
     e.preventDefault();
     const b = document.getElementById('saveProdBtn'); b.textContent = '...';
     const id = document.getElementById('pId').value.trim();
-    const file = document.getElementById('pPhoto').files;
+    const file = document.getElementById('pPhoto').files[0];
     let img = null;
     try {
       if (file) {
         const fn = `${id}_${Date.now()}.${file.name.split('.').pop()}`;
         const up = await fetch(PROXY, {
           method: 'POST',
-          headers: { 'apikey': PUB, 'Authorization': 'Bearer ' + jwt, 'Content-Type': file.type, 'X-Proxy-Path': `storage/v1/object/products/${fn}` },
+          headers: { 'apikey': PUB, 'X-Admin-Token': 'Bearer ' + jwt, 'Content-Type': file.type, 'X-Proxy-Path': `storage/v1/object/products/${fn}` },
           body: file
         });
         if (up.ok) img = `${SB_URL}/storage/v1/object/public/products/${fn}`;
