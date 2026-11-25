@@ -155,238 +155,300 @@
         <label>Комментарий</label>
         <input type="text" class="form-control" id="clientComment" placeholder="Пожелания к заказу">
       </div>
-Оформить заказ
+      <button type="submit" class="primary-btn" id="submitBtn">Оформить заказ</button>
+    </form>
+  </div>
+</div>
 
+<script>
+  const SUPABASE_URL = 'https://bhfzkdduwabffqgpcgdt.supabase.co';
+  const SUPABASE_ANON_KEY = '0e8FU4Ejk9d_IoLp8bh-zw_oOOQNaI8';
 
-const SUPABASE_URL = 'supabase.co';
-const SUPABASE_ANON_KEY = '0e8FU4Ejk9d_IoLp8bh-zw_oOOQNaI8';
-async function sbFetch(path, options = {}) {
-const controller = new AbortController();
-const timer = setTimeout(() => controller.abort(), 10000);
-try {
-const headers = {
-'apikey': SUPABASE_ANON_KEY,
-'Authorization': Bearer ${SUPABASE_ANON_KEY},
-'Content-Type': 'application/json',
-...(options.headers || {})
-};
-const res = await fetch(${SUPABASE_URL}/rest/v1/${path}, { ...options, headers, signal: controller.signal });
-if (!res.ok) {
-const errText = await res.text();
-throw new Error(HTTP ${res.status}: ${errText});
-}
-const text = await res.text();
-return text ? JSON.parse(text) : null;
-} finally {
-clearTimeout(timer);
-}
-}
-let products = [];
-let groups = [];
-let activeCategory = 'Все';
-let selectedVariants = {};
-let cart = [];
-let currentUser = JSON.parse(localStorage.getItem('nut_user') || 'null');
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-e.preventDefault();
-deferredPrompt = e;
-document.getElementById('installPwaBtn').style.display = 'inline-block';
-});
-function installPWA() {
-if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
-}
-async function detectMessengerEnvironment() {
-if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
-const u = window.Telegram.WebApp.initDataUnsafe.user;
-window.Telegram.WebApp.ready();
-window.Telegram.WebApp.expand();
-await syncProfile({ telegram_id: String(), full_name: ${u.first_name || ''} ${u.last_name || ''}.trim() });
-return;
-}
-if (window.WebApp?.initDataUnsafe?.user) {
-const u = window.WebApp.initDataUnsafe.user;
-await syncProfile({ max_id: String(), full_name: ${u.first_name || ''} ${u.last_name || ''}.trim() });
-return;
-}
-const vkId = new URLSearchParams().get('vk_user_id');
-if (vkId) {
-await syncProfile({ vk_id: String(vkId) });
-}
-}
-async function syncProfile(userData) {
-const queryCol = userData.telegram_id ? 'telegram_id' : userData.max_id ? 'max_id' : userData.vk_id ? 'vk_id' : 'phone';
-const queryVal = userData[queryCol];
-if (!queryVal) return;
-try {
-const existing = await sbFetch(profiles?${queryCol}=eq.${encodeURIComponent(queryVal)}&select=*);
-let profile = existing && existing[0];
-if (!profile) {
-const created = await sbFetch('profiles', {
-method: 'POST',
-headers: { 'Prefer': 'return=representation' },
-body: JSON.stringify(userData)
-});
-profile = created && created[0];
-}
-if (profile) {
-currentUser = profile;
-localStorage.setItem('nut_user', JSON.stringify(profile));
-updateUserUI();
-}
-} catch (e) { console.warn('Sync profile:', e); }
-}
-function updateUserUI() {
-if (!currentUser) return;
-document.getElementById('authBadge').textContent = '👤 ' + (currentUser.full_name ||  || 'Профиль');
-if (currentUser.full_name) document.getElementById('clientName').value = currentUser.full_name;
-if () document.getElementById('clientPhone').value = currentUser.phone;
-}
-async function init() {
-const statusEl = document.getElementById('statusMsg');
-try {
-await detectMessengerEnvironment();
-updateUserUI();
-const [prods, grps] = await Promise.all([
-sbFetch('products?is_active=eq.true&order=sort_order.asc'),
-sbFetch('pickup_groups?is_active=eq.true')
-]);
-products = prods || [];
-groups = grps || [];
-products.forEach(p => { selectedVariants[] = 0; });
-statusEl.style.display = products.length ? 'none' : 'block';
-if (!products.length) statusEl.textContent = 'Связь с базой установлена, но таблица товаров пока пуста.';
-renderCategories();
-populateGroups();
-renderProducts();
-} catch (err) {
-statusEl.style.display = 'block';
-statusEl.innerHTML = Ошибка подключения к базе:<br><small style="color:#dc2626">${err.message}</small>;
-}
-}
-function renderCategories() {
-const cats = ['Все', ...new Set((p => p.category))];
-document.getElementById('catsBar').innerHTML = (c =>
-<div class="cat-chip ${c === activeCategory ? 'active' : ''}" onclick="setCategory('${c}')">${c}</div>
-).join('');
-}
-function setCategory(cat) {
-activeCategory = cat;
-renderCategories();
-renderProducts();
-}
-function populateGroups() {
-const select = document.getElementById('groupSelect');
-select.innerHTML = '-- Выберите вашу группу --' +
-(g => <option value="${g.id}">${g.name}</option>).join('');
-const urlGroup = new URLSearchParams().get('group') || currentUser?.default_group_id;
-if (urlGroup && groups.some(g =>  === urlGroup)) select.value = urlGroup;
-onGroupChange();
-}
-function onGroupChange() {
-const gId = document.getElementById('groupSelect').value;
-const group = groups.find(g =>  === gId);
-const badge = document.getElementById('groupBadge');
-const banner = document.getElementById('deliveryBanner');
-if (group) {
-badge.textContent = ;
-banner.innerHTML = 📍 <b>${group.name}</b> (${group.address || ''})<br>Сбор до: <b>${group.collect_until}</b> • Выдача: <b>${group.delivery_date}</b>;
-} else {
-badge.textContent = 'Выбрать группу';
-banner.innerHTML = '👆 Выберите вашу группу, чтобы увидеть точную дату и адрес выдачи';
-}
-}
-function renderProducts() {
-const q = document.getElementById('searchInput').value.toLowerCase().trim();
-const grid = document.getElementById('productsGrid');
-grid.innerHTML = products
-.filter(p => (activeCategory === 'Все' || p.category === activeCategory) &&
-(p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)))
-.map(p => {
-const vIdx = selectedVariants[] || 0;
-const v = p.variants[vIdx];
-const inStock = Number(p.stock_kg) > 0;
-const placeholderImg = 'data:image/svg+xml;utf8,🥜';
-return <div class="card"> <img class="card-img" src="${p.image_url || placeholderImg}" alt="${p.name}" loading="lazy"> <div class="card-body"> <div class="card-title">${p.name}</div> <div class="card-stock ${inStock ? '' : 'out'}">${inStock ?В наличии: ${p.stock_kg} кг: 'Нет в наличии'}</div> <div class="card-desc">${p.description || ''}</div> <div class="variants"> ${p.variants.map((item, i) =>${item.size}).join('')} </div> <div class="card-footer"> <div class="price">${v.price} ₽</div> <button class="add-btn" ${inStock ? '' : 'disabled'} onclick="addToCart('${p.id}')">В корзину</button> </div> </div> </div>;
-}).join('');
-}
-function selectVariant(id, idx) { selectedVariants[id] = idx; renderProducts(); }
-function addToCart(id) {
-const p = products.find(x =>  === id);
-const v = p.variants[selectedVariants[id] || 0];
-const ex = cart.find(c =>  === id && c.size === v.size);
-if (ex) ex.qty++;
-else cart.push({ id: , name: , size: v.size, price: v.price, weight_kg: v.weight_kg, qty: 1 });
-updateCartBar();
-}
-function updateCartBar() {
-const bar = document.getElementById('cartBar');
-if (!cart.length) { bar.classList.add('hidden'); return; }
-document.getElementById('cartCount').textContent = В корзине: ${cart.reduce((s, i) => s + i.qty, 0)} шт.;
-document.getElementById('cartTotal').textContent = ${cart.reduce((s, i) => s + i.price * i.qty, 0)} ₽ →;
-bar.classList.remove('hidden');
-}
-function openAuth() { document.getElementById('authModal').classList.add('open'); }
-function openCart() { renderCartItems(); document.getElementById('cartModal').classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-function renderCartItems() {
-const list = document.getElementById('cartItemsList');
-if (!cart.length) { list.innerHTML = 'Корзина пуста'; return; }
-list.innerHTML = ((item, idx) =>  <div class="cart-item"> <div><b>${item.name}</b> (${item.size})<br><span style="font-size:13px;color:#6b7280;">${item.price} ₽ × ${item.qty} = ${item.price * item.qty} ₽</span></div> <div style="display:flex;gap:8px;align-items:center;"> <button class="qty-btn" onclick="changeQty(${idx}, -1)">-</button> <span>${item.qty}</span> <button class="qty-btn" onclick="changeQty(${idx}, 1)">+</button> </div> </div>).join('');
-}
-function changeQty(idx, d) {
-cart[idx].qty += d;
-if (cart[idx].qty <= 0) cart.splice(idx, 1);
-renderCartItems();
-updateCartBar();
-}
-async function loginViaPhone() {
-const phone = document.getElementById('phoneLoginInput').value.trim();
-const name = document.getElementById('nameLoginInput').value.trim();
-if (!phone) return alert('Введите номер телефона');
-await syncProfile({ phone, full_name: name });
-closeModal('authModal');
-}
-function loginViaMessenger(type) {
-alert(Для входа в 1 клик откройте витрину через кнопку меню вашего бота в ${type}.);
-}
-function loginViaOAuth(provider) {
-window.location.href = ${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(window.location.href)};
-}
-async function submitOrder(e) {
-e.preventDefault();
-if (!cart.length) return alert('Корзина пуста');
-const btn = document.getElementById('submitBtn');
-btn.disabled = true; btn.textContent = 'Оформляем...';
-const gId = document.getElementById('groupSelect').value;
-const name = document.getElementById('clientName').value.trim();
-const phone = document.getElementById('clientPhone').value.trim();
-const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-try {
-if (!currentUser) await syncProfile({ phone, full_name: name, default_group_id: gId });
-const data = await sbFetch('rpc/create_order_and_deduct_stock', {
-method: 'POST',
-body: JSON.stringify({
-p_user_id: currentUser?.id || null,
-p_group_id: gId,
-p_name: name,
-p_phone: phone,
-p_items: cart,
-p_total: total,
-p_payment: document.getElementById('paymentSelect').value,
-p_comment: document.getElementById('clientComment').value.trim()
-})
-});
-alert(✅ Заказ ${data.order_number} оформлен на сумму ${total} ₽!);
-cart = [];
-updateCartBar();
-closeModal('cartModal');
-init();
-} catch (err) {
-alert('Ошибка при оформлении: ' + err.message);
-} finally {
-btn.disabled = false;
-btn.textContent = 'Оформить заказ';
-}
-}
-init();
+  async function sbFetch(path, options = {}) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const headers = {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+      };
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...options, headers, signal: controller.signal });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  let products = [];
+  let groups = [];
+  let activeCategory = 'Все';
+  let selectedVariants = {};
+  let cart = [];
+  let currentUser = JSON.parse(localStorage.getItem('nut_user') || 'null');
+  let deferredPrompt;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installPwaBtn').style.display = 'inline-block';
+  });
+  function installPWA() {
+    if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
+  }
+
+  async function detectMessengerEnvironment() {
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+      const u = window.Telegram.WebApp.initDataUnsafe.user;
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+      await syncProfile({ telegram_id: String(u.id), full_name: `${u.first_name || ''} ${u.last_name || ''}`.trim() });
+      return;
+    }
+    if (window.WebApp && window.WebApp.initDataUnsafe && window.WebApp.initDataUnsafe.user) {
+      const u = window.WebApp.initDataUnsafe.user;
+      await syncProfile({ max_id: String(u.id), full_name: `${u.first_name || ''} ${u.last_name || ''}`.trim() });
+      return;
+    }
+    const vkId = new URLSearchParams(window.location.search).get('vk_user_id');
+    if (vkId) {
+      await syncProfile({ vk_id: String(vkId) });
+    }
+  }
+
+  async function syncProfile(userData) {
+    const queryCol = userData.telegram_id ? 'telegram_id' : userData.max_id ? 'max_id' : userData.vk_id ? 'vk_id' : 'phone';
+    const queryVal = userData[queryCol];
+    if (!queryVal) return;
+
+    try {
+      const existing = await sbFetch(`profiles?${queryCol}=eq.${encodeURIComponent(queryVal)}&select=*`);
+      let profile = (existing && existing.length > 0) ? existing[0] : null;
+      if (!profile) {
+        const created = await sbFetch('profiles', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=representation' },
+          body: JSON.stringify(userData)
+        });
+        profile = (created && created.length > 0) ? created[0] : null;
+      }
+      if (profile) {
+        currentUser = profile;
+        localStorage.setItem('nut_user', JSON.stringify(profile));
+        updateUserUI();
+      }
+    } catch (e) { console.warn('Sync profile:', e); }
+  }
+
+  function updateUserUI() {
+    if (!currentUser) return;
+    document.getElementById('authBadge').textContent = '👤 ' + (currentUser.full_name || currentUser.phone || 'Профиль');
+    if (currentUser.full_name) document.getElementById('clientName').value = currentUser.full_name;
+    if (currentUser.phone) document.getElementById('clientPhone').value = currentUser.phone;
+  }
+
+  async function init() {
+    const statusEl = document.getElementById('statusMsg');
+    try {
+      await detectMessengerEnvironment();
+      updateUserUI();
+
+      const [prods, grps] = await Promise.all([
+        sbFetch('products?is_active=eq.true&order=sort_order.asc'),
+        sbFetch('pickup_groups?is_active=eq.true')
+      ]);
+
+      products = prods || [];
+      groups = grps || [];
+      products.forEach(p => { selectedVariants[p.id] = 0; });
+
+      statusEl.style.display = products.length ? 'none' : 'block';
+      if (!products.length) statusEl.textContent = 'Связь с базой установлена, но таблица товаров пока пуста.';
+
+      renderCategories();
+      populateGroups();
+      renderProducts();
+    } catch (err) {
+      statusEl.style.display = 'block';
+      statusEl.innerHTML = `Ошибка подключения к базе:<br><small style="color:#dc2626">${err.message}</small>`;
+    }
+  }
+
+  function renderCategories() {
+    const cats = ['Все', ...new Set(products.map(p => p.category))];
+    document.getElementById('catsBar').innerHTML = cats.map(c =>
+      `<div class="cat-chip ${c === activeCategory ? 'active' : ''}" onclick="setCategory('${c}')">${c}</div>`
+    ).join('');
+  }
+
+  function setCategory(cat) {
+    activeCategory = cat;
+    renderCategories();
+    renderProducts();
+  }
+
+  function populateGroups() {
+    const select = document.getElementById('groupSelect');
+    select.innerHTML = '<option value="">-- Выберите вашу группу --</option>' +
+      groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+
+    const urlGroup = new URLSearchParams(window.location.search).get('group') || (currentUser && currentUser.default_group_id);
+    if (urlGroup && groups.some(g => g.id === urlGroup)) select.value = urlGroup;
+    onGroupChange();
+  }
+
+  function onGroupChange() {
+    const gId = document.getElementById('groupSelect').value;
+    const group = groups.find(g => g.id === gId);
+    const badge = document.getElementById('groupBadge');
+    const banner = document.getElementById('deliveryBanner');
+
+    if (group) {
+      badge.textContent = group.name;
+      banner.innerHTML = `📍 <b>${group.name}</b> (${group.address || ''})<br>Сбор до: <b>${group.collect_until}</b> • Выдача: <b>${group.delivery_date}</b>`;
+    } else {
+      badge.textContent = 'Выбрать группу';
+      banner.innerHTML = '👆 Выберите вашу группу, чтобы увидеть точную дату и адрес выдачи';
+    }
+  }
+
+  function renderProducts() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    const grid = document.getElementById('productsGrid');
+
+    grid.innerHTML = products
+      .filter(p => (activeCategory === 'Все' || p.category === activeCategory) &&
+                   (p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)))
+      .map(p => {
+        const vIdx = selectedVariants[p.id] || 0;
+        const v = p.variants[vIdx];
+        const inStock = Number(p.stock_kg) > 0;
+        const placeholderImg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" fill="%23e5e7eb"><rect width="300" height="300"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%236b7280" font-size="48">🥜</text></svg>';
+        return `
+          <div class="card">
+            <img class="card-img" src="${p.image_url || placeholderImg}" alt="${p.name}" loading="lazy">
+            <div class="card-body">
+              <div class="card-title">${p.name}</div>
+              <div class="card-stock ${inStock ? '' : 'out'}">${inStock ? `В наличии: ${p.stock_kg} кг` : 'Нет в наличии'}</div>
+              <div class="card-desc">${p.description || ''}</div>
+              <div class="variants">
+                ${p.variants.map((item, i) => `<button class="var-btn ${i === vIdx ? 'active' : ''}" onclick="selectVariant('${p.id}', ${i})">${item.size}</button>`).join('')}
+              </div>
+              <div class="card-footer">
+                <div class="price">${v.price} ₽</div>
+                <button class="add-btn" ${inStock ? '' : 'disabled'} onclick="addToCart('${p.id}')">В корзину</button>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+  }
+
+  function selectVariant(id, idx) { selectedVariants[id] = idx; renderProducts(); }
+
+  function addToCart(id) {
+    const p = products.find(x => x.id === id);
+    const v = p.variants[selectedVariants[id] || 0];
+    const ex = cart.find(c => c.id === id && c.size === v.size);
+    if (ex) ex.qty++;
+    else cart.push({ id: p.id, name: p.name, size: v.size, price: v.price, weight_kg: v.weight_kg, qty: 1 });
+    updateCartBar();
+  }
+
+  function updateCartBar() {
+    const bar = document.getElementById('cartBar');
+    if (!cart.length) { bar.classList.add('hidden'); return; }
+    document.getElementById('cartCount').textContent = `В корзине: ${cart.reduce((s, i) => s + i.qty, 0)} шт.`;
+    document.getElementById('cartTotal').textContent = `${cart.reduce((s, i) => s + i.price * i.qty, 0)} ₽ →`;
+    bar.classList.remove('hidden');
+  }
+
+  function openAuth() { document.getElementById('authModal').classList.add('open'); }
+  function openCart() { renderCartItems(); document.getElementById('cartModal').classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  function renderCartItems() {
+    const list = document.getElementById('cartItemsList');
+    if (!cart.length) { list.innerHTML = '<p style="color:#6b7280;">Корзина пуста</p>'; return; }
+    list.innerHTML = cart.map((item, idx) => `
+      <div class="cart-item">
+        <div><b>${item.name}</b> (${item.size})<br><span style="font-size:13px;color:#6b7280;">${item.price} ₽ × ${item.qty} = ${item.price * item.qty} ₽</span></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="qty-btn" onclick="changeQty(${idx}, -1)">-</button>
+          <span>${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${idx}, 1)">+</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function changeQty(idx, d) {
+    cart[idx].qty += d;
+    if (cart[idx].qty <= 0) cart.splice(idx, 1);
+    renderCartItems();
+    updateCartBar();
+  }
+
+  async function loginViaPhone() {
+    const phone = document.getElementById('phoneLoginInput').value.trim();
+    const name = document.getElementById('nameLoginInput').value.trim();
+    if (!phone) return alert('Введите номер телефона');
+    await syncProfile({ phone, full_name: name });
+    closeModal('authModal');
+  }
+  function loginViaMessenger(type) {
+    alert(`Для входа в 1 клик откройте витрину через кнопку меню вашего бота в ${type}.`);
+  }
+  function loginViaOAuth(provider) {
+    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(window.location.href)}`;
+  }
+
+  async function submitOrder(e) {
+    e.preventDefault();
+    if (!cart.length) return alert('Корзина пуста');
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = 'Оформляем...';
+
+    const gId = document.getElementById('groupSelect').value;
+    const name = document.getElementById('clientName').value.trim();
+    const phone = document.getElementById('clientPhone').value.trim();
+    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+
+    try {
+      if (!currentUser) await syncProfile({ phone, full_name: name, default_group_id: gId });
+
+      const data = await sbFetch('rpc/create_order_and_deduct_stock', {
+        method: 'POST',
+        body: JSON.stringify({
+          p_user_id: currentUser ? currentUser.id : null,
+          p_group_id: gId,
+          p_name: name,
+          p_phone: phone,
+          p_items: cart,
+          p_total: total,
+          p_payment: document.getElementById('paymentSelect').value,
+          p_comment: document.getElementById('clientComment').value.trim()
+        })
+      });
+
+      alert(`✅ Заказ ${data.order_number} оформлен на сумму ${total} ₽!`);
+      cart = [];
+      updateCartBar();
+      closeModal('cartModal');
+      init();
+    } catch (err) {
+      alert('Ошибка при оформлении: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Оформить заказ';
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
