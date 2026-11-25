@@ -35,7 +35,7 @@
 
     .card { background: var(--card); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
     .card-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #eee; }
-    .card-body { padding: 12px; display: flex; flex-direction: column; flex-1: 1; flex: 1; }
+    .card-body { padding: 12px; display: flex; flex-direction: column; flex: 1; }
     .card-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .card-stock { font-size: 12px; color: var(--accent); margin-bottom: 6px; font-weight: 600; }
     .card-stock.out { color: #dc2626; }
@@ -93,7 +93,7 @@
 </div>
 
 <div class="container">
-  <div id="statusMsg" class="status-msg">Загружаем витрину...</div>
+  <div id="statusMsg" class="status-msg">Подключаемся к базе данных...</div>
   <div class="grid" id="productsGrid"></div>
 </div>
 
@@ -102,7 +102,6 @@
   <span id="cartTotal">0 ₽ →</span>
 </div>
 
-<!-- ОКНО АВТОРИЗАЦИИ -->
 <div class="modal" id="authModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -110,12 +109,10 @@
       <button class="close-btn" onclick="closeModal('authModal')">×</button>
     </div>
     <p style="font-size:13px; color:var(--muted); margin-bottom:14px;">Войдите в один клик, чтобы сохранять заказы и получать уведомления о выдаче:</p>
-    
     <button class="auth-btn max" onclick="loginViaMessenger('MAX')">💬 Войти через MAX</button>
     <button class="auth-btn tg" onclick="loginViaMessenger('Telegram')">✈️ Войти через Telegram</button>
     <button class="auth-btn vk" onclick="loginViaOAuth('vk')">🔵 Войти с VK ID</button>
     <button class="auth-btn yandex" onclick="loginViaOAuth('yandex')">🔴 Войти с Яндекс ID</button>
-
     <div class="divider">или по номеру телефона</div>
     <div class="form-group">
       <input type="tel" class="form-control" id="phoneLoginInput" placeholder="+7 (999) 000-00-00">
@@ -127,7 +124,6 @@
   </div>
 </div>
 
-<!-- ОКНО КОРЗИНЫ -->
 <div class="modal" id="cartModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -135,7 +131,6 @@
       <button class="close-btn" onclick="closeModal('cartModal')">×</button>
     </div>
     <div id="cartItemsList"></div>
-
     <form id="orderForm" onsubmit="submitOrder(event)" style="margin-top:14px;">
       <div class="form-group">
         <label>Ваша группа выдачи (обязательно)*</label>
@@ -158,25 +153,33 @@
       </div>
       <div class="form-group">
         <label>Комментарий</label>
+        <input type="text" class="form-control" id="clientComment" placeholder="Пожелания к заказу">
+      </div>
 Оформить заказ
-// ВАШИ КЛЮЧИ SUPABASE:
+
+
 const SUPABASE_URL = 'supabase.co';
 const SUPABASE_ANON_KEY = '0e8FU4Ejk9d_IoLp8bh-zw_oOOQNaI8';
-// Прямой клиент REST API без сторонних CDN
 async function sbFetch(path, options = {}) {
+const controller = new AbortController();
+const timer = setTimeout(() => controller.abort(), 10000);
+try {
 const headers = {
 'apikey': SUPABASE_ANON_KEY,
 'Authorization': Bearer ${SUPABASE_ANON_KEY},
 'Content-Type': 'application/json',
 ...(options.headers || {})
 };
-const res = await fetch(${SUPABASE_URL}/rest/v1/${path}, { ...options, headers });
+const res = await fetch(${SUPABASE_URL}/rest/v1/${path}, { ...options, headers, signal: controller.signal });
 if (!res.ok) {
 const errText = await res.text();
-throw new Error(errText);
+throw new Error(HTTP ${res.status}: ${errText});
 }
 const text = await res.text();
 return text ? JSON.parse(text) : null;
+} finally {
+clearTimeout(timer);
+}
 }
 let products = [];
 let groups = [];
@@ -185,9 +188,6 @@ let selectedVariants = {};
 let cart = [];
 let currentUser = JSON.parse(localStorage.getItem('nut_user') || 'null');
 let deferredPrompt;
-if ('serviceWorker' in navigator) {
-navigator.serviceWorker.register('sw.js').catch(() => {});
-}
 window.addEventListener('beforeinstallprompt', (e) => {
 e.preventDefault();
 deferredPrompt = e;
@@ -196,7 +196,6 @@ document.getElementById('installPwaBtn').style.display = 'inline-block';
 function installPWA() {
 if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
 }
-// Автоопределение MAX / Telegram / VK без внешних скриптов
 async function detectMessengerEnvironment() {
 if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
 const u = window.Telegram.WebApp.initDataUnsafe.user;
@@ -256,13 +255,13 @@ products = prods || [];
 groups = grps || [];
 products.forEach(p => { selectedVariants[] = 0; });
 statusEl.style.display = products.length ? 'none' : 'block';
-if (!products.length) statusEl.textContent = 'В базе пока нет активных товаров. Добавьте их через SQL или админку.';
+if (!products.length) statusEl.textContent = 'Связь с базой установлена, но таблица товаров пока пуста.';
 renderCategories();
 populateGroups();
 renderProducts();
 } catch (err) {
 statusEl.style.display = 'block';
-statusEl.innerHTML = Ошибка загрузки базы:<br><small>${err.message}</small>;
+statusEl.innerHTML = Ошибка подключения к базе:<br><small style="color:#dc2626">${err.message}</small>;
 }
 }
 function renderCategories() {
@@ -391,5 +390,3 @@ btn.textContent = 'Оформить заказ';
 }
 }
 init();
-
-
