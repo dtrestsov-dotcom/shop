@@ -48,6 +48,7 @@
   </div>
   <div class="tabs">
     <div class="tab active" onclick="switchTab('orders', this)">📦 Заказы</div>
+        <div class="tab" onclick="switchTab('supply', this)">🚚 Закупка</div>
     <div class="tab" onclick="switchTab('products', this)">🥜 Товары и склад</div>
     <div class="tab" onclick="switchTab('groups', this)">📍 Группы и даты</div>
   </div>
@@ -95,6 +96,25 @@
         </form>
       </div>
       <div id="groupsList"></div>
+    </div>
+        <!-- ВКЛАДКА 4: ЗАКУПКА У ПОСТАВЩИКА -->
+    <div id="tab-supply" class="hidden">
+      <div class="card">
+        <h3 style="margin-bottom:10px; font-size:15px;">📊 Сводка заказа поставщику</h3>
+        <div class="row" style="margin-bottom:10px;">
+          <div class="form-group" style="flex:1;"><label>Заказы С (дата)</label><input type="date" id="supFrom" class="form-control"></div>
+          <div class="form-group" style="flex:1;"><label>ПО (дата)</label><input type="date" id="supTo" class="form-control"></div>
+        </div>
+        <div class="form-group">
+          <label>Группы (оставьте все или снимите лишние):</label>
+          <div id="supGroupsChecks" class="row" style="gap:12px; font-size:13px;"></div>
+        </div>
+        <div class="row">
+          <button class="btn" style="flex:2;" onclick="calcSupply()">Рассчитать закупку</button>
+          <button class="btn gray" style="flex:1;" onclick="copySupply()">📋 Копировать</button>
+        </div>
+      </div>
+      <div id="supplyResult"></div>
     </div>
   </div>
 </div>
@@ -148,7 +168,7 @@
   function switchTab(n, el) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
-    ['orders', 'products', 'groups'].forEach(i => document.getElementById('tab-' + i).classList.toggle('hidden', i !== n));
+    ['orders', 'products', 'groups', 'supply'].forEach(i => document.getElementById('tab-' + i).classList.toggle('hidden', i !== n));
   }
 
   async function showApp() {
@@ -159,7 +179,7 @@
     if (pForm && !document.getElementById('pVariantsText')) {
       const div = document.createElement('div');
       div.className = 'form-group';
-      div.innerHTML = '<label>Фасовки и цены (формат: 0.5 кг=350, 1 кг=700)</label><input type="text" id="pVariantsText" class="form-control" placeholder="0.5 кг=350, 1 кг=700">';
+      div.innerHTML = '<label>Фасовки и цены (0.5 кг=350, 1 кг=700)</label><input type="text" id="pVariantsText" class="form-control" style="margin-bottom:8px;" placeholder="0.5 кг=350, 1 кг=700"><label>Вес 1 коробки у поставщика (кг)</label><input type="number" step="0.1" id="pBoxWeight" class="form-control" value="5">';
       pForm.insertBefore(div, document.getElementById('pPhoto').parentElement);
       document.getElementById('pPriceHalf').required = false;
       document.getElementById('pPriceFull').required = false;
@@ -212,6 +232,7 @@
     document.getElementById('groupsList').innerHTML = (grps || []).map(g => `
       <div class="card"><b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
       <small>Сбор: <b>${g.collect_until || '-'}</b> | Выдача: <b>${g.delivery_date || '-'}</b> | ${g.address || ''}</small></div>`).join('');
+        initSupplyFilters(grps);
   }
 
   function editProd(id) {
@@ -223,6 +244,7 @@
     document.getElementById('pDesc').value = p.description || '';
     document.getElementById('pStock').value = p.stock_kg;
     document.getElementById('pVariantsText').value = (p.variants || []).map(v => `${v.size}=${v.price}`).join(', ');
+        document.getElementById('pBoxWeight').value = p.box_weight_kg || 5;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -277,6 +299,7 @@
         name: document.getElementById('pName').value.trim(),
         description: document.getElementById('pDesc').value.trim(),
         stock_kg: parseFloat(document.getElementById('pStock').value) || 0,
+                box_weight_kg: parseFloat(document.getElementById('pBoxWeight').value) || 5,
         variants: vText ? parseVariants(vText) : [{ size: '0.5 кг', price: 0, weight_kg: 0.5 }],
         is_active: true
       };
@@ -302,6 +325,74 @@
       await req('rest/v1/pickup_groups', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: JSON.stringify(pl) });
       alert('✅ Группа сохранена!'); e.target.reset(); loadAll();
     } catch (err) { alert(err.message); }
+      let lastSupplyText = '';
+
+  function initSupplyFilters(grps) {
+    const today = new Date().toISOString().slice(0, 10);
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    if (!document.getElementById('supFrom').value) document.getElementById('supFrom').value = weekAgo;
+    if (!document.getElementById('supTo').value) document.getElementById('supTo').value = today;
+    document.getElementById('supGroupsChecks').innerHTML = (grps || []).map(g =>
+      `<label style="display:flex;align-items:center;gap:4px;font-weight:normal;color:#111827;"><input type="checkbox" class="sup-grp" value="${g.id}" checked> ${g.name}</label>`
+    ).join('');
+  }
+
+  async function calcSupply() {
+    const from = document.getElementById('supFrom').value;
+    const to = document.getElementById('supTo').value;
+    const checkedGrps = Array.from(document.querySelectorAll('.sup-grp:checked')).map(c => c.value);
+    const resDiv = document.getElementById('supplyResult');
+    resDiv.innerHTML = 'Считаем потребность...';
+
+    const orders = await req(`rest/v1/orders?created_at=gte.${from}T00:00:00&created_at=lte.${to}T23:59:59&order=created_at.desc`);
+    const filtered = (orders || []).filter(o => !checkedGrps.length || checkedGrps.includes(o.group_id));
+
+    const demand = {};
+    filtered.forEach(o => {
+      (o.items || []).forEach(it => {
+        const w = (Number(it.weight_kg) || 0.5) * (Number(it.qty) || 1);
+        demand[it.id] = (demand[it.id] || 0) + w;
+      });
+    });
+
+    const rows = allProducts.map(p => {
+      const ordKg = Number((demand[p.id] || 0).toFixed(3));
+      const freeStock = Number(p.stock_kg) || 0;
+      const boxKg = Number(p.box_weight_kg) || 5;
+      const deficitKg = freeStock < 0 ? Math.abs(freeStock) : 0;
+      const boxesToBuy = deficitKg > 0 ? Math.ceil(deficitKg / boxKg) : 0;
+      const buyKg = Number((boxesToBuy * boxKg).toFixed(3));
+      return { p, ordKg, freeStock, boxKg, deficitKg, boxesToBuy, buyKg };
+    }).filter(r => r.ordKg > 0 || r.deficitKg > 0);
+
+    if (!rows.length) {
+      resDiv.innerHTML = '<div class="card">За выбранный период заказов по этим группам нет.</div>';
+      lastSupplyText = '';
+      return;
+    }
+
+    lastSupplyText = `Заказ поставщику (${from} — ${to}):\n` + rows
+      .filter(r => r.boxesToBuy > 0)
+      .map(r => `• ${r.p.name}: ${r.boxesToBuy} кор. (${r.buyKg} кг) [не хватает ${r.deficitKg} кг, кор. ${r.boxKg} кг]`)
+      .join('\n');
+
+    resDiv.innerHTML = rows.map(r => `
+      <div class="card" style="border-left: 4px solid ${r.boxesToBuy > 0 ? '#dc2626' : '#2e7d32'};">
+        <b>[${r.p.id}] ${r.p.name}</b> <small style="color:#6b7280;">(коробка: ${r.boxKg} кг)</small><br>
+        <div style="font-size:13px; margin-top:4px;">
+          Заказано за период: <b>${r.ordKg} кг</b> • Свободный остаток: <b>${r.freeStock} кг</b><br>
+          ${r.boxesToBuy > 0
+            ? `<span style="color:#dc2626; font-weight:700;">👉 Заказать: ${r.boxesToBuy} кор. = ${r.buyKg} кг</span> (дефицит ${r.deficitKg} кг)`
+            : `<span style="color:#2e7d32;">✓ Хватает из наличия</span>`}
+        </div>
+      </div>`).join('');
+  }
+
+  function copySupply() {
+    if (!lastSupplyText) return alert('Нет позиций для заказа поставщику (всего хватает на складе)');
+    navigator.clipboard.writeText(lastSupplyText);
+    alert('✅ Заявка скопирована в буфер обмена!');
+  }
   }
 
   if (jwt) showApp();
