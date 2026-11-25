@@ -132,19 +132,28 @@
   let products = [], groups = [], activeCategory = 'Все', selectedVariants = {}, cart = [];
   let currentUser = JSON.parse(localStorage.getItem('nut_user') || 'null');
 
-  async function syncProfile(userData) {
+    async function syncProfile(userData) {
     const col = userData.telegram_id ? 'telegram_id' : userData.max_id ? 'max_id' : userData.vk_id ? 'vk_id' : 'phone';
     if (!userData[col]) return;
     try {
       const ex = await sbFetch(`profiles?${col}=eq.${encodeURIComponent(userData[col])}&select=*`);
-      let p = ex && ex;
+      let p = Array.isArray(ex) ? ex[0] : ex;
       if (!p) {
-        const cr = await sbFetch('profiles', { method: 'POST', headers: { 'Prefer': 'return=representation' }, body: JSON.stringify(userData) });
-        p = cr && cr;
+        const cr = await sbFetch('profiles', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=representation' },
+          body: JSON.stringify(userData)
+        });
+        p = Array.isArray(cr) ? cr[0] : cr;
       }
-      if (p) { currentUser = p; localStorage.setItem('nut_user', JSON.stringify(p)); updateUserUI(); }
-    } catch (e) {}
+      if (p) {
+        currentUser = p;
+        localStorage.setItem('nut_user', JSON.stringify(p));
+        updateUserUI();
+      }
+    } catch (e) { console.warn(e); }
   }
+
 
   function updateUserUI() {
     if (!currentUser) return;
@@ -239,7 +248,12 @@
   }
 
   function openAuth() { document.getElementById('authModal').classList.add('open'); }
-  function openCart() { renderCartItems(); document.getElementById('cartModal').classList.add('open'); }
+  function openCart() {
+  updateUserUI();
+  renderCartItems();
+  document.getElementById('cartModal').classList.add('open');
+}
+
   function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
   function renderCartItems() {
