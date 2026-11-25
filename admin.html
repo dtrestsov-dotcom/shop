@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Админка — Орехи и Сухофрукты</title>
+  <style>
+    :root { --bg: #f3f4f6; --card: #fff; --text: #111827; --muted: #6b7280; --accent: #2e7d32; --border: #e5e7eb; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 40px; }
+    .topbar { background: #1f2937; color: #fff; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 20; }
+    .topbar h1 { font-size: 16px; }
+    .logout-btn { background: #374151; color: #fff; border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+    .tabs { display: flex; background: #fff; border-bottom: 1px solid var(--border); position: sticky; top: 48px; z-index: 15; }
+    .tab { flex: 1; padding: 12px; text-align: center; font-weight: 700; font-size: 14px; color: var(--muted); border-bottom: 3px solid transparent; cursor: pointer; }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .container { max-width: 800px; margin: 0 auto; padding: 14px; }
+    .card { background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .login-box { max-width: 380px; margin: 60px auto; background: #fff; padding: 24px; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+    .form-control { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; }
+    .btn { background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; }
+    .btn.sm { width: auto; padding: 7px 12px; font-size: 12px; }
+    .btn.gray { background: #6b7280; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background: #e8f5e9; color: var(--accent); }
+    .badge.new { background: #fef3c7; color: #b45309; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-box">
+  <h2 style="margin-bottom:16px; text-align:center;">🔐 Вход в управление</h2>
+  <form onsubmit="adminLogin(event)">
+    <div class="form-group"><label>Email администратора</label><input type="email" id="loginEmail" class="form-control" required></div>
+    <div class="form-group"><label>Пароль</label><input type="password" id="loginPass" class="form-control" required></div>
+    <button type="submit" class="btn" id="loginBtn">Войти в панель</button>
+  </form>
+</div>
+<div id="adminApp" class="hidden">
+  <div class="topbar">
+    <h1>⚙️ Управление магазином</h1>
+    <div class="row">
+      <a href="index.html" target="_blank" style="color:#a7f3d0; font-size:12px; text-decoration:none;">Витрина ↗</a>
+      <button class="logout-btn" onclick="adminLogout()">Выйти</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('orders', this)">📦 Заказы</div>
+    <div class="tab" onclick="switchTab('products', this)">🥜 Товары и склад</div>
+    <div class="tab" onclick="switchTab('groups', this)">📍 Группы и даты</div>
+  </div>
+
+  <div class="container">
+    <!-- ВКЛАДКА 1: ЗАКАЗЫ -->
+    <div id="tab-orders">
+      <div id="ordersList">Загружаем заказы...</div>
+    </div>
+
+    <!-- ВКЛАДКА 2: ТОВАРЫ И СКЛАД -->
+    <div id="tab-products" class="hidden">
+      <div class="card">
+        <h3 style="margin-bottom:10px; font-size:15px;">➕ Добавить / Обновить товар</h3>
+        <form onsubmit="saveProduct(event)">
+          <div class="row">
+            <div class="form-group" style="flex:1;"><label>Артикул (id)*</label><input type="text" id="pId" class="form-control" placeholder="01025" required></div>
+            <div class="form-group" style="flex:2;"><label>Категория*</label><input type="text" id="pCat" class="form-control" value="Орехи" required></div>
+          </div>
+          <div class="form-group"><label>Название товара*</label><input type="text" id="pName" class="form-control" placeholder="Грецкий орех бабочка" required></div>
+          <div class="form-group"><label>Описание</label><input type="text" id="pDesc" class="form-control" placeholder="Свежий урожай, без горечи"></div>
+          <div class="row">
+            <div class="form-group" style="flex:1;"><label>Остаток (кг)*</label><input type="number" step="0.01" id="pStock" class="form-control" value="10" required></div>
+            <div class="form-group" style="flex:1;"><label>Цена 0.5 кг (₽)*</label><input type="number" id="pPriceHalf" class="form-control" required></div>
+            <div class="form-group" style="flex:1;"><label>Цена 1 кг (₽)*</label><input type="number" id="pPriceFull" class="form-control" required></div>
+          </div>
+          <div class="form-group"><label>Фото товара (с телефона или ПК)</label><input type="file" id="pPhoto" accept="image/*" class="form-control"></div>
+          <button type="submit" class="btn" id="saveProdBtn">Сохранить товар</button>
+        </form>
+      </div>
+      <div id="productsList"></div>
+    </div>
+
+    <!-- ВКЛАДКА 3: ГРУППЫ И ДАТЫ ВЫДАЧИ -->
+    <div id="tab-groups" class="hidden">
+      <div class="card">
+        <h3 style="margin-bottom:10px; font-size:15px;">➕ Добавить / Изменить группу</h3>
+        <form onsubmit="saveGroup(event)">
+          <div class="row">
+            <div class="form-group" style="flex:1;"><label>Код (лат.)*</label><input type="text" id="gId" class="form-control" placeholder="solnechnii" required></div>
+            <div class="form-group" style="flex:2;"><label>Название группы*</label><input type="text" id="gName" class="form-control" placeholder='Район "Солнечный"' required></div>
+          </div>
+          <div class="row">
+            <div class="form-group" style="flex:1;"><label>Сбор заявок до</label><input type="text" id="gCollect" class="form-control" placeholder="26.11.2026 до 20:00"></div>
+            <div class="form-group" style="flex:1;"><label>Дата и время выдачи</label><input type="text" id="gDelivery" class="form-control" placeholder="29.11.2026 с 18:00 до 20:00"></div>
+          </div>
+          <div class="form-group"><label>Адрес выдачи</label><input type="text" id="gAddress" class="form-control" placeholder="ул. Лучистая, 12"></div>
+          <div class="row">
+            <div class="form-group" style="flex:1;"><label>ID чата MAX</label><input type="text" id="gMax" class="form-control" placeholder="-686600..."></div>
+            <div class="form-group" style="flex:1;"><label>ID чата Telegram</label><input type="text" id="gTg" class="form-control" placeholder="-100180..."></div>
+          </div>
+          <button type="submit" class="btn">Сохранить группу</button>
+        </form>
+      </div>
+      <div id="groupsList"></div>
+    </div>
+  </div>
+</div>
+<script>
+  const SUPABASE_URL = 'https://supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoZnprZGR1d2FiZmZxZ3BjZ2R0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MDc4MTQsImV4cCI6MjA5MTM4MzgxNH0.d6z5yB1wI7e1Y45eJzdXBhYmFzZSI6InJlZiI6ImJoZnprZGR1';
+  const PUB_KEY = 'sb_publishable_0e8FU4Ejk9d_IoLp8bh-zw_oOOQNaI8';
+
+  let token = localStorage.getItem('admin_jwt') || '';
+
+  async function api(path, options = {}) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      ...options,
+      headers: {
+        'apikey': PUB_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+      }
+    });
+    if (res.status === 401) { adminLogout(); throw new Error('Сессия истекла, войдите снова'); }
+    if (!res.ok) throw new Error(await res.text());
+    const t = await res.text();
+    return t ? JSON.parse(t) : null;
+  }
+
+  async function adminLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn'); btn.textContent = 'Входим...';
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: { 'apikey': PUB_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('loginEmail').value.trim(),
+          password: document.getElementById('loginPass').value
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error_description || data.msg || 'Неверный логин или пароль');
+      token = data.access_token;
+      localStorage.setItem('admin_jwt', token);
+      showApp();
+    } catch (err) { alert(err.message); } finally { btn.textContent = 'Войти в панель'; }
+  }
+
+  function adminLogout() {
+    token = ''; localStorage.removeItem('admin_jwt');
+    document.getElementById('adminApp').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+  }
+
+  function switchTab(name, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    ['orders', 'products', 'groups'].forEach(id => document.getElementById('tab-' + id).classList.toggle('hidden', id !== name));
+  }
+
+  async function showApp() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('adminApp').classList.remove('hidden');
+    loadAll();
+  }
+
+  async function loadAll() {
+    try {
+      const [orders, products, groups] = await Promise.all([
+        api('orders?order=created_at.desc&limit=50'),
+        api('products?order=sort_order.asc,id.asc'),
+        api('pickup_groups?order=name.asc')
+      ]);
+
+      document.getElementById('ordersList').innerHTML = (orders || []).map(o => `
+        <div class="card">
+          <div class="row" style="justify-content:space-between; margin-bottom:6px;">
+            <b>${o.order_number}</b>
+            <span class="badge ${o.status === 'new' ? 'new' : ''}">${o.status === 'new' ? 'Новый' : 'Выдан'}</span>
+          </div>
+          <div style="font-size:13px; margin-bottom:6px;">📍 Группа: <b>${o.group_id}</b> | 👤 ${o.customer_name} (${o.customer_phone})</div>
+          <div style="font-size:12px; background:#f9fafb; padding:8px; border-radius:8px; margin-bottom:8px;">
+            ${(o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} шт. = ${i.price * i.qty} ₽`).join('<br>')}
+          </div>
+          <div class="row" style="justify-content:space-between;">
+            <b>Итого: ${o.total_amount} ₽ (${o.payment_method})</b>
+            ${o.status === 'new' ? `<button class="btn sm" onclick="markDone(${o.id})">Отметить выданным</button>` : ''}
+          </div>
+        </div>`).join('') || '<p>Заказов пока нет</p>';
+
+      document.getElementById('productsList').innerHTML = (products || []).map(p => `
+        <div class="card">
+          <div class="row" style="justify-content:space-between;">
+            <div><b>[${p.id}] ${p.name}</b> <small style="color:#6b7280;">(${p.category})</small><br>
+            <small>Цены: ${(p.variants || []).map(v => `${v.size}: ${v.price}₽`).join(' / ')}</small></div>
+            <div class="row">
+              <input type="number" step="0.1" id="stk-${p.id}" value="${p.stock_kg}" style="width:70px; padding:6px; border:1px solid #ccc; border-radius:8px;">
+              <button class="btn sm" onclick="updateStock('${p.id}')">Кг ✓</button>
+              <button class="btn sm gray" onclick="toggleProd('${p.id}', ${!p.is_active})">${p.is_active ? 'Скрыть' : 'Показать'}</button>
+            </div>
+          </div>
+        </div>`).join('');
+
+      document.getElementById('groupsList').innerHTML = (groups || []).map(g => `
+        <div class="card">
+          <b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
+          <small>Сбор до: <b>${g.collect_until || '-'}</b> | Выдача: <b>${g.delivery_date || '-'}</b> | Адрес: ${g.address || '-'}</small>
+        </div>`).join('');
+    } catch (e) { console.error(e); }
+  }
+
+  async function updateStock(id) {
+    const val = parseFloat(document.getElementById('stk-' + id).value) || 0;
+    await api(`products?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ stock_kg: val }) });
+    alert('Остаток обновлен!');
+  }
+
+  async function toggleProd(id, state) {
+    await api(`products?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ is_active: state }) });
+    loadAll();
+  }
+
+  async function markDone(id) {
+    await api(`orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'completed' }) });
+    loadAll();
+  }
+
+  async function saveProduct(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveProdBtn'); btn.textContent = 'Сохраняем...';
+    const id = document.getElementById('pId').value.trim();
+    const file = document.getElementById('pPhoto').files;
+    let imageUrl = null;
+
+    try {
+      if (file) {
+        const ext = file.name.split('.').pop();
+        const fileName = `${id}_${Date.now()}.${ext}`;
+        const upRes = await fetch(`${SUPABASE_URL}/storage/v1/object/products/${fileName}`, {
+          method: 'POST',
+          headers: { 'apikey': PUB_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': file.type },
+          body: file
+        });
+        if (upRes.ok) imageUrl = `${SUPABASE_URL}/storage/v1/object/public/products/${fileName}`;
+      }
+
+      const payload = {
+        id,
+        category: document.getElementById('pCat').value.trim(),
+        name: document.getElementById('pName').value.trim(),
+        description: document.getElementById('pDesc').value.trim(),
+        stock_kg: parseFloat(document.getElementById('pStock').value) || 0,
+        variants: [
+          { size: '0.5 кг', price: Number(document.getElementById('pPriceHalf').value), weight_kg: 0.5 },
+          { size: '1 кг', price: Number(document.getElementById('pPriceFull').value), weight_kg: 1 }
+        ],
+        is_active: true
+      };
+      if (imageUrl) payload.image_url = imageUrl;
+
+      await api('products', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: JSON.stringify(payload) });
+      alert('✅ Товар сохранен!');
+      e.target.reset();
+      loadAll();
+    } catch (err) { alert('Ошибка: ' + err.message); } finally { btn.textContent = 'Сохранить товар'; }
+  }
+
+  async function saveGroup(e) {
+    e.preventDefault();
+    const payload = {
+      id: document.getElementById('gId').value.trim(),
+      name: document.getElementById('gName').value.trim(),
+      collect_until: document.getElementById('gCollect').value.trim(),
+      delivery_date: document.getElementById('gDelivery').value.trim(),
+      address: document.getElementById('gAddress').value.trim(),
+      max_chat_id: document.getElementById('gMax').value.trim() || null,
+      telegram_chat_id: document.getElementById('gTg').value.trim() || null,
+      is_active: true
+    };
+    try {
+      await api('pickup_groups', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: JSON.stringify(payload) });
+      alert('✅ Группа сохранена!');
+      e.target.reset();
+      loadAll();
+    } catch (err) { alert('Ошибка: ' + err.message); }
+  }
+
+  if (token) showApp();
+</script>
+</body>
+</html>
