@@ -84,14 +84,35 @@
 
 <div class="modal" id="authModal">
   <div class="modal-content">
-    <div class="modal-header"><h2>Вход в профиль</h2><button class="close-btn" onclick="closeModal('authModal')">×</button></div>
-    <button class="auth-btn max" onclick="loginViaMessenger('MAX')">💬 Войти через MAX</button>
-    <button class="auth-btn tg" onclick="loginViaMessenger('Telegram')">✈️ Войти через Telegram</button>
-    <button class="auth-btn vk" onclick="loginViaOAuth('vk')">🔵 Войти с VK ID</button>
-    <button class="auth-btn yandex" onclick="loginViaOAuth('yandex')">🔴 Войти с Яндекс ID</button>
-    <div class="form-group"><input type="tel" class="form-control" id="phoneLoginInput" placeholder="+7 (999) 000-00-00"></div>
-    <div class="form-group"><input type="text" class="form-control" id="nameLoginInput" placeholder="Ваше имя"></div>
-    <button class="primary-btn" onclick="loginViaPhone()">Продолжить</button>
+        <div class="modal-header">
+      <h2 id="profileModalTitle">Вход в профиль</h2>
+      <button class="close-btn" onclick="closeModal('authModal')">×</button>
+    </div>
+
+    <div id="clientCabinet" style="display:none;">
+      <div style="background:#f3f4f6; padding:12px; border-radius:12px; margin-bottom:14px; font-size:13px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <b id="cabName" style="font-size:15px;"></b><br>
+            <span id="cabPhone" style="color:var(--muted);"></span>
+          </div>
+          <button class="pill-btn" style="background:#fee2e2; color:#dc2626;" onclick="clientLogout()">Выйти</button>
+        </div>
+      </div>
+      <h3 style="font-size:15px; margin-bottom:10px;">📦 Мои заказы</h3>
+      <div id="myOrdersList" style="font-size:13px; color:var(--muted);">Загружаем историю заказов...</div>
+    </div>
+
+    <div id="clientLoginForm">
+      <button class="auth-btn max" onclick="loginViaMessenger('MAX')">💬 Войти через MAX</button>
+      <button class="auth-btn tg" onclick="loginViaMessenger('Telegram')">✈️ Войти через Telegram</button>
+      <button class="auth-btn vk" onclick="loginViaOAuth('vk')">🔵 Войти с VK ID</button>
+      <button class="auth-btn yandex" onclick="loginViaOAuth('yandex')">🔴 Войти с Яндекс ID</button>
+      <div class="form-group"><input type="tel" class="form-control" id="phoneLoginInput" placeholder="+7 (999) 000-00-00"></div>
+      <div class="form-group"><input type="text" class="form-control" id="nameLoginInput" placeholder="Ваше имя"></div>
+      <button class="primary-btn" onclick="loginViaPhone()">Продолжить</button>
+    </div>
+
   </div>
 </div>
 
@@ -247,7 +268,94 @@
     bar.classList.remove('hidden');
   }
 
-  function openAuth() { document.getElementById('authModal').classList.add('open'); }
+    async function openAuth() {
+    document.getElementById('authModal').classList.add('open');
+    const cab = document.getElementById('clientCabinet');
+    const form = document.getElementById('clientLoginForm');
+    const title = document.getElementById('profileModalTitle');
+
+    if (currentUser) {
+      title.textContent = 'Личный кабинет';
+      form.style.display = 'none';
+      cab.style.display = 'block';
+      document.getElementById('cabName').textContent = currentUser.full_name || 'Покупатель';
+      document.getElementById('cabPhone').textContent = currentUser.phone || '';
+      await loadMyOrders();
+    } else {
+      title.textContent = 'Вход в профиль';
+      cab.style.display = 'none';
+      form.style.display = 'block';
+    }
+  }
+
+  function clientLogout() {
+    currentUser = null;
+    localStorage.removeItem('nut_user');
+    document.getElementById('authBadge').textContent = 'Войти';
+    openAuth();
+  }
+
+  let cachedMyOrders = [];
+
+  async function loadMyOrders() {
+    const list = document.getElementById('myOrdersList');
+    list.innerHTML = 'Загружаем заказы...';
+    try {
+      const filter = currentUser.id
+        ? `or=(user_id.eq.${currentUser.id}${currentUser.phone ? `,customer_phone.eq.${encodeURIComponent(currentUser.phone)}` : ''})`
+        : `customer_phone=eq.${encodeURIComponent(currentUser.phone)}`;
+
+      const orders = await sbFetch(`orders?${filter}&order=created_at.desc&limit=20`);
+      cachedMyOrders = orders || [];
+
+      if (!cachedMyOrders.length) {
+        list.innerHTML = '<p style="padding:16px 0; text-align:center;">У вас пока нет оформленных заказов.</p>';
+        return;
+      }
+
+      list.innerHTML = cachedMyOrders.map((o, idx) => {
+        const grp = groups.find(g => g.id === o.group_id);
+        const dt = new Date(o.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const statusBadge = o.status === 'new'
+          ? '<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">Принят в сбор</span>'
+          : '<span style="background:#e8f5e9; color:#2e7d32; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">Выдан ✓</span>';
+
+        return `
+          <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; color:var(--text);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <b>Заказ ${o.order_number} от ${dt}</b>
+              ${statusBadge}
+            </div>
+            <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">
+              📍 Группа: <b>${grp ? grp.name : o.group_id}</b>${grp?.delivery_date ? ` • Выдача: <b>${grp.delivery_date}</b>` : ''}
+            </div>
+            <div style="background:#f9fafb; padding:8px; border-radius:8px; font-size:12px; margin-bottom:8px;">
+              ${(o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} шт. — ${i.price * i.qty} ₽`).join('<br>')}
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <b>Итого: ${o.total_amount} ₽</b>
+              <button class="pill-btn" onclick="repeatOrder(${idx})">🔄 Повторить заказ</button>
+            </div>
+          </div>`;
+      }).join('');
+    } catch (err) {
+      list.innerHTML = `<p style="color:#dc2626;">Ошибка загрузки: ${err.message}</p>`;
+    }
+  }
+
+  function repeatOrder(idx) {
+    const o = cachedMyOrders[idx];
+    if (!o || !o.items) return;
+    cart = o.items.map(i => ({ ...i }));
+    if (o.group_id && groups.some(g => g.id === o.group_id)) {
+      document.getElementById('groupSelect').value = o.group_id;
+      onGroupChange();
+    }
+    updateCartBar();
+    closeModal('authModal');
+    openCart();
+  }
+
   function openCart() {
   updateUserUI();
   renderCartItems();
