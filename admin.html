@@ -417,7 +417,7 @@
 
   function initSupplyFilters(grps) {
     const today = new Date().toISOString().slice(0, 10);
-    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    const weekAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
     if (!document.getElementById('supFrom').value) document.getElementById('supFrom').value = weekAgo;
     if (!document.getElementById('supTo').value) document.getElementById('supTo').value = today;
 
