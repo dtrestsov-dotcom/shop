@@ -326,7 +326,7 @@
       alert('✅ Группа сохранена!'); e.target.reset(); loadAll();
     } catch (err) { alert(err.message); }
       let lastSupplyText = '';
-  }
+  
   function initSupplyFilters(grps) {
     const today = new Date().toISOString().slice(0, 10);
     const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
