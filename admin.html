@@ -745,13 +745,19 @@
     renderOrdersTab();
   }
 
-  function renderOrdersTab() {
+   function renderOrdersTab() {
     const w = window.selectedOrderWeek || 0;
-    const countNew = (wk) => (window.allOrders || []).filter(o => {
-         const getGrpName = (gid) => {
+    const getGrpName = (gid) => {
       const g = (window.allGroups || []).find(x => x.id === gid);
       return g ? g.name : (gid || 'Без группы');
     };
+
+    const countNew = (wk) => (window.allOrders || []).filter(o => {
+      if (o.status !== 'new') return false;
+      if (wk === 0) return true;
+      const g = (window.allGroups || []).find(x => x.id === o.group_id);
+      return (g ? (g.week_num || 1) : 1) === wk;
+    }).length;
 
     const filtered = (window.allOrders || [])
       .filter(o => {
@@ -769,8 +775,40 @@
     const printTitle = w === 0
       ? `🖨️ Печать всех новых (${countNew(0)})`
       : `🖨️ Печать Недели ${w} (${countNew(w)})`;
- let lastGrpHeader = '';
-    document.getElementById('ordersList').innerHTML = `
+
+    let lastGrpHeader = '';
+    const cardsHtml = filtered.map(o => {
+      const grp = window.allGroups.find(g => g.id === o.group_id);
+      const grpTitle = getGrpName(o.group_id);
+      const grpBanner = grpTitle !== lastGrpHeader
+        ? `<div style="background:#e5e7eb; color:#111827; font-weight:800; font-size:14px; padding:8px 12px; border-radius:8px; margin:14px 0 6px 0;">📍 ${grpTitle}</div>`
+        : '';
+      lastGrpHeader = grpTitle;
+      const wk = grp ? (grp.week_num || 1) : 1;
+      const dt = new Date(o.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const numLabel = o.order_number.startsWith('№') ? o.order_number : '№' + o.id;
+      const itemsHtml = (o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} = ${i.price * i.qty} ₽`).join('<br>');
+      const doneBtn = o.status === 'new' ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : '';
+      return grpBanner + `
+      <div class="card">
+        <div class="row" style="justify-content:space-between;margin-bottom:6px;">
+          <b>Заказ ${numLabel} <span style="font-weight:400; color:#6b7280; font-size:13px;">от ${dt}</span></b>
+          <span class="badge ${o.status === 'new' ? 'new' : ''}">${o.status === 'new' ? 'Новый' : 'Выдан'}</span>
+        </div>
+        <div style="font-size:13px;margin-bottom:6px;">📍 <b>${grpTitle}</b> <small style="color:#6b7280;">(Нед. ${wk})</small> | 👤 ${o.customer_name} (${o.customer_phone})</div>
+        <div style="font-size:12px;background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:8px;">${itemsHtml}</div>
+        <div class="row" style="justify-content:space-between;">
+          <b>Итого: ${o.total_amount} ₽ (${o.payment_method})</b>
+          <div class="row">
+            <button class="btn sm gray" onclick="printOrders([${o.id}])">🖨️ На пакет</button>
+            ${doneBtn}
+            <button class="btn sm" style="background:#dc2626;" onclick="cancelOrder(${o.id}, '${numLabel}')">🗑️</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const headerHtml = `
       <div class="card" style="padding:10px; margin-bottom:10px;">
         <div style="font-size:12px; font-weight:700; color:#6b7280; margin-bottom:6px;">📅 Показать заказы по неделям:</div>
         <div class="row" style="margin-bottom:8px;">
@@ -781,39 +819,12 @@
           <button class="btn sm" style="${btnStyle(4)}" onclick="setOrderWeek(4)">🟢 Нед. 4 (${countNew(4)})</button>
         </div>
         <div class="row">
-  <button class="btn sm" style="flex:1; background:#111827;" onclick="${printAction}">${printTitle}</button>
-  ${countNew(w) > 0 ? `<button class="btn sm" style="flex:1; background:#16a34a;" onclick="markWeekDone(${w})">✅ Выдать все (${countNew(w)})</button>` : ''}
-</div>
-           </div>` + (filtered.map(o => {
-   const grp = window.allGroups.find(g => g.id === o.group_id);
-   const grpTitle = getGrpName(o.group_id);
-   const grpBanner = grpTitle !== lastGrpHeader
-     ? `<div style="background:#e5e7eb; color:#111827; font-weight:800; font-size:14px; padding:8px 12px; border-radius:8px; margin:14px 0 6px 0;">📍 ${grpTitle}</div>`
-     : '';
-   lastGrpHeader = grpTitle;
-   const wk = grp ? (grp.week_num || 1) : 1;
-   const dt = new Date(o.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-   const numLabel = o.order_number.startsWith('№') ? o.order_number : '№' + o.id;
-   return grpBanner + `
-   <div class="card">
-        <div class="row" style="justify-content:space-between;margin-bottom:6px;">
-          <b>Заказ ${numLabel} <span style="font-weight:400; color:#6b7280; font-size:13px;">от ${dt}</span></b>
-          <span class="badge ${o.status === 'new' ? 'new' : ''}">${o.status === 'new' ? 'Новый' : 'Выдан'}</span>
+          <button class="btn sm" style="flex:1; background:#111827;" onclick="${printAction}">${printTitle}</button>
+          ${countNew(w) > 0 ? `<button class="btn sm" style="flex:1; background:#16a34a;" onclick="markWeekDone(${w})">✅ Выдать все (${countNew(w)})</button>` : ''}
         </div>
-        <div style="font-size:13px;margin-bottom:6px;">📍 <b>${grp ? grp.name : o.group_id}</b> <small style="color:#6b7280;">(Нед. ${wk})</small> | 👤 ${o.customer_name} (${o.customer_phone})</div>
-        <div style="font-size:12px;background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:8px;">
-          ${(o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} = ${i.price * i.qty} ₽`).join('<br>')}
-        </div>
-        <div class="row" style="justify-content:space-between;">
-          <b>Итого: ${o.total_amount} ₽ (${o.payment_method})</b>
-          <div class="row">
-            <button class="btn sm gray" onclick="printOrders([${o.id}])">🖨️ На пакет</button>
-            ${o.status === 'new' ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : ''}
-            <button class="btn sm" style="background:#dc2626;" onclick="cancelOrder(${o.id}, '${numLabel}')">🗑️</button>
-          </div>
-        </div>
-     </div>`;
-    }).join('') || '<div class="card" style="color:#6b7280; text-align:center;">В выбранной неделе заказов пока нет</div>');
+      </div>`;
+
+    document.getElementById('ordersList').innerHTML = headerHtml + (cardsHtml || '<div class="card" style="color:#6b7280; text-align:center;">В выбранной неделе заказов пока нет</div>');
   }
 async function markWeekDone(w) {
   const targets = (window.allOrders || []).filter(o => {
