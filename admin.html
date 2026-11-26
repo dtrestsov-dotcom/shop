@@ -209,14 +209,22 @@
     ]);
     allProducts = prods || [];
 
-       window.allOrders = ords || [];
+          window.allOrders = ords || [];
     window.allGroups = grps || [];
 
     document.getElementById('ordersList').innerHTML = `
-      <div style="margin-bottom:10px; display:flex; justify-content:flex-end;">
-        <button class="btn sm" style="background:#111827;" onclick="printAllNewOrders()">🖨️ Печать всех новых на пакеты</button>
+      <div class="card" style="padding:10px; margin-bottom:10px;">
+        <div style="font-size:12px; font-weight:700; color:#6b7280; margin-bottom:6px;">🖨️ Печать новых заказов на пакеты по неделям:</div>
+        <div class="row">
+          <button class="btn sm" style="background:#374151;" onclick="printWeekOrders(1)">⚪ Нед. 1</button>
+          <button class="btn sm" style="background:#4b5563;" onclick="printWeekOrders(2)">🔘 Нед. 2</button>
+          <button class="btn sm" style="background:#2563eb;" onclick="printWeekOrders(3)">🔵 Нед. 3</button>
+          <button class="btn sm" style="background:#059669;" onclick="printWeekOrders(4)">🟢 Нед. 4</button>
+          <button class="btn sm" style="background:#111827;" onclick="printAllNewOrders()">Все новые</button>
+        </div>
       </div>` + (window.allOrders.map(o => {
       const grp = window.allGroups.find(g => g.id === o.group_id);
+      const wk = grp ? (grp.week_num || 1) : 1;
       const dt = new Date(o.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
       const numLabel = o.order_number.startsWith('№') ? o.order_number : '№' + o.id;
       return `
@@ -225,7 +233,7 @@
           <b>Заказ ${numLabel} <span style="font-weight:400; color:#6b7280; font-size:13px;">от ${dt}</span></b>
           <span class="badge ${o.status === 'new' ? 'new' : ''}">${o.status === 'new' ? 'Новый' : 'Выдан'}</span>
         </div>
-        <div style="font-size:13px;margin-bottom:6px;">📍 <b>${grp ? grp.name : o.group_id}</b> | 👤 ${o.customer_name} (${o.customer_phone})</div>
+        <div style="font-size:13px;margin-bottom:6px;">📍 <b>${grp ? grp.name : o.group_id}</b> <small style="color:#6b7280;">(Нед. ${wk})</small> | 👤 ${o.customer_name} (${o.customer_phone})</div>
         <div style="font-size:12px;background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:8px;">
           ${(o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} = ${i.price * i.qty} ₽`).join('<br>')}
         </div>
@@ -234,6 +242,7 @@
           <div class="row">
             <button class="btn sm gray" onclick="printOrders([${o.id}])">🖨️ На пакет</button>
             ${o.status === 'new' ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : ''}
+            <button class="btn sm" style="background:#dc2626;" onclick="cancelOrder(${o.id}, '${numLabel}')">🗑️</button>
           </div>
         </div>
       </div>`;
@@ -548,6 +557,26 @@
       </style></head><body><div class="grid">${cardsHtml}</div>
       <script>window.onload = function(){ window.print(); };<\/script></body></html>`);
     win.document.close();
+  }
+  async function cancelOrder(id, numLabel) {
+    if (!confirm(`Удалить Заказ ${numLabel} и вернуть его товары на остаток склада?`)) return;
+    try {
+      const res = await req('rest/v1/rpc/cancel_order_and_restore_stock', {
+        method: 'POST',
+        body: JSON.stringify({ p_order_id: id })
+      });
+      if (res && res.ok === false) return alert(res.error);
+      loadAll();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  function printWeekOrders(weekNum) {
+    const grpIds = (window.allGroups || []).filter(g => (g.week_num || 1) === weekNum).map(g => g.id);
+    const ids = (window.allOrders || []).filter(o => o.status === 'new' && grpIds.includes(o.group_id)).map(o => o.id);
+    if (!ids.length) return alert(`Нет новых заказов на Неделю ${weekNum}`);
+    printOrders(ids);
   }
 
   if (jwt) showApp();
