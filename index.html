@@ -197,7 +197,7 @@
 await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch(() => {});
 
       const [prods, grps] = await Promise.all([
-        sbFetch('products?is_active=eq.true&order=sort_order.asc'),
+           sbFetch('products?is_active=eq.true&order=id.asc'),
         sbFetch('pickup_groups?is_active=eq.true')
       ]);
       products = prods || []; groups = grps || [];
@@ -240,17 +240,21 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
   function renderProducts() {
     const q = document.getElementById('searchInput').value.toLowerCase().trim();
     const ph = '';
-    document.getElementById('productsGrid').innerHTML = products
-      .filter(p => (activeCategory === 'Все' || p.category === activeCategory) && (p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)))
-      .map(p => {
-                const vi = selectedVariants[p.id] || 0, v = p.variants[vi];
-        return `<div class="card"><img class="card-img" src="${p.image_url || ph}" loading="lazy"><div class="card-body">
-          <div class="card-title">${p.name}</div>
-          <div class="card-desc">${p.description || ''}</div>
-          <div class="variants">${p.variants.map((it, i) => `<button class="var-btn ${i === vi ? 'active' : ''}" onclick="selectVariant('${p.id}',${i})">${it.size}</button>`).join('')}</div>
-          <div class="card-footer"><div class="price">${v.price} ₽</div><button class="add-btn" onclick="addToCart('${p.id}')">+ В корзину</button></div>
-        </div></div>`;
-      }).join('');
+         document.getElementById('productsGrid').innerHTML = products
+        .filter(p => (activeCategory === 'Все' || p.category === activeCategory) && (p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)))
+        .sort((a, b) => String(a.id).padStart(6, '0').localeCompare(String(b.id).padStart(6, '0')))
+        .map(p => {
+          const vi = selectedVariants[p.id] || 0, v = p.variants[vi];
+          const imgHtml = p.image_url
+            ? `<img class="card-img" src="${p.image_url}" loading="lazy">`
+            : `<div class="card-img" style="display:flex;align-items:center;justify-content:center;font-size:44px;background:#f0fdf4;">🥜</div>`;
+          return `<div class="card">${imgHtml}<div class="card-body">
+            <div class="card-title">${p.name}</div>
+            <div class="card-desc">${p.description || ''}</div>
+            <div class="variants">${p.variants.map((it, i) => `<button class="var-btn ${i === vi ? 'active' : ''}" onclick="selectVariant('${p.id}',${i})">${it.size}</button>`).join('')}</div>
+            <div class="card-footer"><div class="price">${v.price} ₽</div><button class="add-btn" onclick="addToCart('${p.id}')">+ В корзину</button></div>
+          </div></div>`;
+        }).join('');
   }
 
   function selectVariant(id, i) { selectedVariants[id] = i; renderProducts(); }
