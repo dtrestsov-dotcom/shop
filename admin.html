@@ -49,6 +49,7 @@
   <div class="tabs">
     <div class="tab active" onclick="switchTab('orders', this)">📦 Заказы</div>
         <div class="tab" onclick="switchTab('supply', this)">🚚 Закупка</div>
+        <div class="tab" onclick="switchTab('packing', this)">⚖️ Фасовка</div>
     <div class="tab" onclick="switchTab('products', this)">🥜 Товары и склад</div>
     <div class="tab" onclick="switchTab('groups', this)">📍 Группы и даты</div>
   </div>
@@ -131,6 +132,21 @@
       <div id="supplyResult"></div>
     </div>
   </div>
+      <!-- ВКЛАДКА 5: ЛИСТ ФАСОВКИ -->
+    <div id="tab-packing" class="hidden">
+      <div class="card" style="padding:10px; margin-bottom:10px;">
+        <div style="font-size:12px; font-weight:700; color:#6b7280; margin-bottom:6px;">⚖️ Выберите неделю для расчёта фасовки (по новым заказам):</div>
+        <div class="row" style="margin-bottom:8px;">
+          <button class="btn sm" style="background:#374151;" onclick="renderPackingTab(1)">⚪ Нед. 1</button>
+          <button class="btn sm" style="background:#4b5563;" onclick="renderPackingTab(2)">🔘 Нед. 2</button>
+          <button class="btn sm" style="background:#2563eb;" onclick="renderPackingTab(3)">🔵 Нед. 3</button>
+          <button class="btn sm" style="background:#059669;" onclick="renderPackingTab(4)">🟢 Нед. 4</button>
+          <button class="btn sm" style="background:#111827;" onclick="renderPackingTab(0)">Все недели</button>
+        </div>
+        <button class="btn sm" style="width:100%; background:#16a34a;" onclick="printPackingList()">🖨️ Распечатать лист фасовки</button>
+      </div>
+      <div id="packingResult"></div>
+    </div>
 </div>
 <script>
   const PROXY = 'https://functions.yandexcloud.net/d4e8bc8b2ghfd5kgtm3j';
@@ -182,8 +198,7 @@
   function switchTab(n, el) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
-    ['orders', 'products', 'groups', 'supply'].forEach(i => document.getElementById('tab-' + i).classList.toggle('hidden', i !== n));
-  }
+    ['orders', 'products', 'groups', 'supply', 'packing'].forEach(i => document.getElementById('tab-' + i).classList.toggle('hidden', i !== n));
 
   async function showApp() {
     document.getElementById('loginScreen').classList.add('hidden');
@@ -256,6 +271,7 @@
     }).join('');
 
         initSupplyFilters(grps);
+    renderPackingTab(window.selectedPackingWeek || 1);
   }
 
   function editProd(id) {
@@ -728,6 +744,102 @@ async function markWeekDone(w) {
   });
   loadAll();
 }
+  window.selectedPackingWeek = 1;
+  let lastPackingHtml = '';
+  let lastPackingTitle = '';
+
+  function renderPackingTab(w) {
+    window.selectedPackingWeek = w;
+    const grpIds = (window.allGroups || []).filter(g => w === 0 || (g.week_num || 1) === w).map(g => g.id);
+    const orders = (window.allOrders || []).filter(o => o.status === 'new' && grpIds.includes(o.group_id));
+    const resDiv = document.getElementById('packingResult');
+
+    lastPackingTitle = w === 0 ? 'Все недели (новые заказы)' : `Неделя ${w} (новые заказы: ${orders.length} шт.)`;
+
+    if (!orders.length) {
+      resDiv.innerHTML = `<div class="card" style="color:#6b7280; text-align:center;">Новых заказов для фасовки по ${w === 0 ? 'всем неделям' : 'Неделе ' + w} пока нет.</div>`;
+      lastPackingHtml = '';
+      return;
+    }
+
+    // Группируем по ID товара и фасовке (size)
+    const map = {};
+    orders.forEach(o => {
+      (o.items || []).forEach(it => {
+        const key = `${it.id}__${it.size}`;
+        if (!map[key]) {
+          const prod = (allProducts || []).find(p => p.id === it.id);
+          map[key] = {
+            id: it.id,
+            category: prod ? prod.category : 'Прочее',
+            name: it.name,
+            size: it.size,
+            weight_kg: Number(it.weight_kg) || 0.5,
+            qty: 0
+          };
+        }
+        map[key].qty += Number(it.qty) || 1;
+      });
+    });
+
+    const items = Object.values(map).sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name) || a.weight_kg - b.weight_kg);
+
+    // Группируем по категориям для удобной фасовки
+    const byCat = {};
+    items.forEach(it => {
+      if (!byCat[it.category]) byCat[it.category] = [];
+      byCat[it.category].push(it);
+    });
+
+    lastPackingHtml = Object.entries(byCat).map(([cat, list]) => `
+      <h3>${cat}</h3>
+      <table>
+        <thead><tr><th>Арт.</th><th>Товар</th><th>Фасовка</th><th>Кол-во пакетов</th><th>Всего вес</th><th>Готово</th></tr></thead>
+        <tbody>
+          ${list.map(x => `
+            <tr>
+              <td>${x.id}</td>
+              <td><b>${x.name}</b></td>
+              <td><b>${x.size}</b></td>
+              <td style="font-size:16px;"><b>${x.qty} шт.</b></td>
+              <td>${Number((x.qty * x.weight_kg).toFixed(3))} кг</td>
+              <td style="text-align:center;">☐</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`).join('');
+
+    resDiv.innerHTML = `<div style="font-weight:700; font-size:14px; margin-bottom:8px;">📋 ${lastPackingTitle}</div>` +
+      Object.entries(byCat).map(([cat, list]) => `
+        <div class="card">
+          <div style="font-weight:700; color:#2e7d32; margin-bottom:8px; border-bottom:1px solid #e5e7eb; padding-bottom:4px;">${cat}</div>
+          ${list.map(x => `
+            <label style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px dashed #f3f4f6; font-weight:normal; color:#111827; cursor:pointer;">
+              <span style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" style="width:18px; height:18px;">
+                <span><b>${x.name}</b> — <span style="background:#fef3c7; padding:2px 6px; border-radius:6px; font-weight:700;">${x.size}</span></span>
+              </span>
+              <span style="font-size:15px; font-weight:800; color:#111827;">${x.qty} шт. <small style="font-weight:400; color:#6b7280;">(${Number((x.qty * x.weight_kg).toFixed(3))} кг)</small></span>
+            </label>`).join('')}
+        </div>`).join('');
+  }
+
+  function printPackingList() {
+    if (!lastPackingHtml) return alert('Нет позиций для печати в выбранной неделе');
+    const win = window.open('', '_blank', 'width=850,height=900');
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Лист фасовки</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 16px; color: #000; }
+        h2 { margin: 0 0 12px 0; }
+        h3 { margin: 14px 0 6px 0; background: #f3f4f6; padding: 4px 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+        th { background: #fafafa; }
+      </style></head><body>
+      <h2>⚖️ Лист фасовки — ${lastPackingTitle}</h2>
+      ${lastPackingHtml}
+      <script>window.onload = function(){ window.print(); };<\/script></body></html>`);
+    win.document.close();
+  }
 
   if (jwt) showApp();
 </script>
