@@ -229,9 +229,18 @@
         </div>
       </div>`).join('');
 
-    document.getElementById('groupsList').innerHTML = (grps || []).map(g => `
-      <div class="card"><b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
-      <small>Сбор: <b>${g.collect_until || '-'}</b> | Выдача: <b>${g.delivery_date || '-'}</b> | ${g.address || ''}</small></div>`).join('');
+        window.allGroups = grps || [];
+    document.getElementById('groupsList').innerHTML = window.allGroups.map(g => `
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
+            <small>Сбор: <b>${g.collect_until || '-'}</b> | Выдача: <b>${g.delivery_date || '-'}</b> | ${g.address || ''}</small>
+          </div>
+          <button class="btn sm" style="background:#2563eb;" onclick="editGroup('${g.id}')">✏️ Изм.</button>
+        </div>
+      </div>`).join('');
+
         initSupplyFilters(grps);
   }
 
@@ -245,6 +254,18 @@
     document.getElementById('pStock').value = p.stock_kg;
     document.getElementById('pVariantsText').value = (p.variants || []).map(v => `${v.size}=${v.price}`).join(', ');
         document.getElementById('pBoxWeight').value = p.box_weight_kg || 5;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function editGroup(id) {
+    const g = (window.allGroups || []).find(x => x.id === id);
+    if (!g) return;
+    document.getElementById('gId').value = g.id;
+    document.getElementById('gName').value = g.name;
+    document.getElementById('gCollect').value = g.collect_until || '';
+    document.getElementById('gDelivery').value = g.delivery_date || '';
+    document.getElementById('gAddress').value = g.address || '';
+    document.getElementById('gMax').value = g.max_chat_id || '';
+    document.getElementById('gTg').value = g.telegram_chat_id || '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
