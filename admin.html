@@ -199,7 +199,7 @@
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
     ['orders', 'products', 'groups', 'supply', 'packing'].forEach(i => document.getElementById('tab-' + i).classList.toggle('hidden', i !== n));
-
+  }
   async function showApp() {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('adminApp').classList.remove('hidden');
@@ -840,7 +840,7 @@ async function markWeekDone(w) {
       <script>window.onload = function(){ window.print(); };<\/script></body></html>`);
     win.document.close();
   }
-  }
+  
   if (jwt) showApp();
 </script>
 </body>
