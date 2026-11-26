@@ -75,28 +75,42 @@
       </div>
       <div id="productsList"></div>
     </div>
-    <div id="tab-groups" class="hidden">
+       <div id="tab-groups" class="hidden">
       <div class="card">
-        <h3 style="margin-bottom:10px; font-size:15px;">➕ Добавить / Изменить группу</h3>
+        <h3 style="margin-bottom:10px; font-size:15px;">➕ Добавить / Изменить группу (4-недельный цикл)</h3>
         <form onsubmit="saveGroup(event)">
           <div class="row">
             <div class="form-group" style="flex:1;"><label>Код (лат.)*</label><input type="text" id="gId" class="form-control" placeholder="solnechnii" required></div>
-            <div class="form-group" style="flex:2;"><label>Название группы*</label><input type="text" id="gName" class="form-control" required></div>
+            <div class="form-group" style="flex:2;"><label>Название группы*</label><input type="text" id="gName" class="form-control" placeholder='Район "Солнечный"' required></div>
+            <div class="form-group" style="flex:1;">
+              <label>Неделя цикла*</label>
+              <select id="gWeek" class="form-control">
+                <option value="1">Неделя 1</option>
+                <option value="2">Неделя 2</option>
+                <option value="3">Неделя 3</option>
+                <option value="4">Неделя 4</option>
+              </select>
+            </div>
           </div>
           <div class="row">
-            <div class="form-group" style="flex:1;"><label>Сбор до</label><input type="text" id="gCollect" class="form-control" placeholder="26.11.2026 до 20:00"></div>
-            <div class="form-group" style="flex:1;"><label>Дата выдачи</label><input type="text" id="gDelivery" class="form-control" placeholder="29.11.2026 с 18:00"></div>
+            <div class="form-group" style="flex:1;"><label>Опорная дата сбора*</label><input type="date" id="gBaseCollect" class="form-control" required></div>
+            <div class="form-group" style="flex:1;"><label>Выдача С (дата)*</label><input type="date" id="gBaseStart" class="form-control" required></div>
+            <div class="form-group" style="flex:1;"><label>Выдача ПО (дата)</label><input type="date" id="gBaseEnd" class="form-control"></div>
           </div>
-          <div class="form-group"><label>Адрес выдачи</label><input type="text" id="gAddress" class="form-control"></div>
           <div class="row">
-            <div class="form-group" style="flex:1;"><label>ID чата MAX</label><input type="text" id="gMax" class="form-control"></div>
-            <div class="form-group" style="flex:1;"><label>ID чата Telegram</label><input type="text" id="gTg" class="form-control"></div>
+            <div class="form-group" style="flex:1;"><label>Время выдачи</label><input type="text" id="gTime" class="form-control" placeholder="с 18:00 до 20:00"></div>
+            <div class="form-group" style="flex:2;"><label>Адрес выдачи</label><input type="text" id="gAddress" class="form-control" placeholder="ул. Лучистая, 12"></div>
+          </div>
+          <div class="row">
+            <div class="form-group" style="flex:1;"><label>ID чата MAX</label><input type="text" id="gMax" class="form-control" placeholder="-686600..."></div>
+            <div class="form-group" style="flex:1;"><label>ID чата Telegram</label><input type="text" id="gTg" class="form-control" placeholder="-100180..."></div>
           </div>
           <button type="submit" class="btn">Сохранить группу</button>
         </form>
       </div>
       <div id="groupsList"></div>
     </div>
+
         <!-- ВКЛАДКА 4: ЗАКУПКА У ПОСТАВЩИКА -->
     <div id="tab-supply" class="hidden">
       <div class="card">
@@ -229,17 +243,28 @@
         </div>
       </div>`).join('');
 
-        window.allGroups = grps || [];
-    document.getElementById('groupsList').innerHTML = window.allGroups.map(g => `
-      <div class="card">
-        <div class="row" style="justify-content:space-between;">
-          <div>
-            <b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
-            <small>Сбор: <b>${g.collect_until || '-'}</b> | Выдача: <b>${g.delivery_date || '-'}</b> | ${g.address || ''}</small>
-          </div>
-          <button class="btn sm" style="background:#2563eb;" onclick="editGroup('${g.id}')">✏️ Изм.</button>
-        </div>
-      </div>`).join('');
+           window.allGroups = grps || [];
+    const weekMeta = [
+      { w: 1, title: '⚪ Неделя 1 цикла', bg: '#ffffff', border: '#d1d5db' },
+      { w: 2, title: '🔘 Неделя 2 цикла', bg: '#f3f4f6', border: '#9ca3af' },
+      { w: 3, title: '🔵 Неделя 3 цикла', bg: '#eff6ff', border: '#60a5fa' },
+      { w: 4, title: '🟢 Неделя 4 цикла', bg: '#ecfdf5', border: '#34d399' }
+    ];
+    document.getElementById('groupsList').innerHTML = weekMeta.map(m => {
+      const list = window.allGroups.filter(g => (g.week_num || 1) === m.w);
+      return `
+        <div style="margin-top:16px; margin-bottom:6px; font-weight:700; font-size:15px;">${m.title} (${list.length})</div>
+        ${list.map(g => `
+          <div class="card" style="background:${m.bg}; border-left:4px solid ${m.border};">
+            <div class="row" style="justify-content:space-between;">
+              <div>
+                <b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
+                <small>Сбор: <b>${g.collect_until || '-'}</b> | Выдача: <b>${g.delivery_date || '-'}</b> | ${g.address || ''}</small>
+              </div>
+              <button class="btn sm" style="background:#2563eb;" onclick="editGroup('${g.id}')">✏️ Изм.</button>
+            </div>
+          </div>`).join('') || '<div class="card" style="color:#6b7280;font-size:13px;">В этой неделе пока нет групп</div>'}`;
+    }).join('');
 
         initSupplyFilters(grps);
   }
@@ -256,13 +281,16 @@
         document.getElementById('pBoxWeight').value = p.box_weight_kg || 5;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  function editGroup(id) {
+    function editGroup(id) {
     const g = (window.allGroups || []).find(x => x.id === id);
     if (!g) return;
     document.getElementById('gId').value = g.id;
     document.getElementById('gName').value = g.name;
-    document.getElementById('gCollect').value = g.collect_until || '';
-    document.getElementById('gDelivery').value = g.delivery_date || '';
+    document.getElementById('gWeek').value = g.week_num || 1;
+    document.getElementById('gBaseCollect').value = g.base_collect_date || '';
+    document.getElementById('gBaseStart').value = g.base_delivery_start || '';
+    document.getElementById('gBaseEnd').value = g.base_delivery_end || g.base_delivery_start || '';
+    document.getElementById('gTime').value = g.delivery_time || '';
     document.getElementById('gAddress').value = g.address || '';
     document.getElementById('gMax').value = g.max_chat_id || '';
     document.getElementById('gTg').value = g.telegram_chat_id || '';
@@ -330,13 +358,18 @@
     } catch (err) { alert(err.message); } finally { b.textContent = 'Сохранить товар'; }
   }
 
-    async function saveGroup(e) {
+     async function saveGroup(e) {
     e.preventDefault();
+    const sDate = document.getElementById('gBaseStart').value;
+    const eDate = document.getElementById('gBaseEnd').value || sDate;
     const pl = {
       id: document.getElementById('gId').value.trim(),
       name: document.getElementById('gName').value.trim(),
-      collect_until: document.getElementById('gCollect').value.trim(),
-      delivery_date: document.getElementById('gDelivery').value.trim(),
+      week_num: Number(document.getElementById('gWeek').value) || 1,
+      base_collect_date: document.getElementById('gBaseCollect').value,
+      base_delivery_start: sDate,
+      base_delivery_end: eDate,
+      delivery_time: document.getElementById('gTime').value.trim(),
       address: document.getElementById('gAddress').value.trim(),
       max_chat_id: document.getElementById('gMax').value.trim() || null,
       telegram_chat_id: document.getElementById('gTg').value.trim() || null,
@@ -344,7 +377,8 @@
     };
     try {
       await req('rest/v1/pickup_groups', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: JSON.stringify(pl) });
-      alert('✅ Группа сохранена!');
+      await req('rest/v1/rpc/refresh_group_dates', { method: 'POST', body: '{}' });
+      alert('✅ Группа сохранена и даты рассчитаны!');
       e.target.reset();
       loadAll();
     } catch (err) {
