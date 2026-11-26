@@ -61,7 +61,18 @@
         <form onsubmit="saveProduct(event)">
           <div class="row">
             <div class="form-group" style="flex:1;"><label>Артикул (id)*</label><input type="text" id="pId" class="form-control" placeholder="01025" required></div>
-            <div class="form-group" style="flex:2;"><label>Категория*</label><input type="text" id="pCat" class="form-control" value="Орехи" required></div>
+                      <div class="form-group" style="flex:2;">
+            <label>Категория*</label>
+            <select id="pCatSelect" class="form-control" onchange="onCatSelectChange()">
+              <option value="Орехи и семечки">Орехи и семечки</option>
+              <option value="Сухофрукты и цукаты">Сухофрукты и цукаты</option>
+              <option value="Сладости и орехи в глазури">Сладости и орехи в глазури</option>
+              <option value="Специи и приправы">Специи и приправы</option>
+              <option value="Штучные товары">Штучные товары</option>
+              <option value="__new__">➕ Новая категория...</option>
+            </select>
+            <input type="text" id="pCat" class="form-control" style="display:none; margin-top:6px;" placeholder="Введите название новой категории" value="Орехи и семечки" required>
+          </div>
           </div>
           <div class="form-group"><label>Название товара*</label><input type="text" id="pName" class="form-control" required></div>
           <div class="form-group"><label>Описание</label><input type="text" id="pDesc" class="form-control"></div>
@@ -208,7 +219,26 @@
     if (pForm && !document.getElementById('pVariantsText')) {
       const div = document.createElement('div');
       div.className = 'form-group';
-      div.innerHTML = '<label>Фасовки и цены (0.5 кг=350, 1 кг=700)</label><input type="text" id="pVariantsText" class="form-control" style="margin-bottom:8px;" placeholder="0.5 кг=350, 1 кг=700"><label>Вес 1 коробки у поставщика (кг)</label><input type="number" step="0.1" id="pBoxWeight" class="form-control" value="5">';
+         div.innerHTML = `
+     <div class="row" style="margin-bottom:8px;">
+       <div style="flex:1;">
+         <label>Тип товара и фасовки</label>
+         <select id="pPackType" class="form-control" onchange="onPackTypeChange()">
+           <option value="weight">Весовой (0.5 кг и 1 кг)</option>
+           <option value="spice">Специи (100 г)</option>
+           <option value="piece">Штучный (1 шт.)</option>
+           <option value="custom">Свой вариант вручную</option>
+         </select>
+       </div>
+       <div style="flex:1;">
+         <label id="pBasePriceLabel">Цена за 1 кг (₽) — авторасчёт</label>
+         <input type="number" id="pBasePrice" class="form-control" placeholder="Например: 700" oninput="autoCalcVariants()">
+       </div>
+     </div>
+     <label>Итоговые фасовки и цены (можно подправить вручную)</label>
+     <input type="text" id="pVariantsText" class="form-control" style="margin-bottom:8px;" placeholder="0.5 кг=350, 1 кг=700">
+     <label>Вес 1 коробки / упаковки у поставщика (кг или шт.)</label>
+     <input type="number" step="0.1" id="pBoxWeight" class="form-control" value="5">`;
       pForm.insertBefore(div, document.getElementById('pPhoto').parentElement);
       document.getElementById('pPriceHalf').required = false;
       document.getElementById('pPriceFull').required = false;
@@ -228,21 +258,44 @@
     window.allGroups = grps || [];
     window.selectedOrderWeek = window.selectedOrderWeek || 0;
     renderOrdersTab();
+    const catSel = document.getElementById('pCatSelect');
+    if (catSel) {
+      const existingCats = Array.from(new Set([
+        'Орехи и семечки', 'Сухофрукты и цукаты', 'Сладости и орехи в глазури', 'Специи и приправы', 'Штучные товары',
+        ...allProducts.map(p => p.category).filter(Boolean)
+      ]));
+      const curVal = catSel.value;
+      catSel.innerHTML = existingCats.map(c => `<option value="${c}">${c}</option>`).join('') + '<option value="__new__">➕ Новая категория...</option>';
+      if (existingCats.includes(curVal)) catSel.value = curVal;
+      onCatSelectChange();
+    }
 
     document.getElementById('productsList').innerHTML = allProducts.map(p => `
       <div class="card" style="${p.is_active ? '' : 'opacity:0.6;'}">
-        <div class="row" style="justify-content:space-between;">
+        <div class="row" style="justify-content:space-between; margin-bottom:6px;">
           <div style="display:flex;gap:10px;align-items:center;">
             ${p.image_url ? `<img src="${p.image_url}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;">` : ''}
-            <div><b>[${p.id}] ${p.name}</b> <small style="color:#6b7280;">(${p.category})</small><br>
-            <small>${(p.variants || []).map(v => `${v.size}: <b>${v.price}₽</b>`).join(' / ')}</small></div>
+            <div>
+              <b>[${p.id}] ${p.name}</b> <small style="color:#6b7280;">(${p.category})</small>
+            </div>
           </div>
           <div class="row">
-            <input type="number" step="0.1" id="stk-${p.id}" value="${p.stock_kg}" style="width:64px;padding:6px;border:1px solid #ccc;border-radius:8px;">
-            <button class="btn sm" onclick="updStk('${p.id}')">Кг ✓</button>
             <button class="btn sm" style="background:#2563eb;" onclick="editProd('${p.id}')">✏️ Изм.</button>
             <button class="btn sm gray" onclick="togProd('${p.id}',${!p.is_active})">${p.is_active ? 'Скрыть' : 'Показать'}</button>
             <button class="btn sm" style="background:#dc2626;" onclick="delProd('${p.id}')">🗑️</button>
+          </div>
+        </div>
+        <div class="row" style="justify-content:space-between; background:#f9fafb; padding:6px 8px; border-radius:8px;">
+          <div class="row" style="gap:6px;">
+            ${(p.variants || []).map((v, idx) => `
+              <span style="font-size:12px;">${v.size}:</span>
+              <input type="number" id="pr-${p.id}-${idx}" value="${v.price}" style="width:62px;padding:4px;border:1px solid #ccc;border-radius:6px;"> ₽
+            `).join('')}
+            <button class="btn sm" style="background:#059669;" onclick="updPrices('${p.id}')">₽ ✓</button>
+          </div>
+          <div class="row" style="gap:4px;">
+            <input type="number" step="0.1" id="stk-${p.id}" value="${p.stock_kg}" style="width:62px;padding:4px;border:1px solid #ccc;border-radius:6px;">
+            <button class="btn sm" onclick="updStk('${p.id}')">Кг ✓</button>
           </div>
         </div>
       </div>`).join('');
@@ -274,17 +327,30 @@
     renderPackingTab(window.selectedPackingWeek || 1);
   }
 
-  function editProd(id) {
+   function editProd(id) {
     const p = allProducts.find(x => x.id === id);
     if (!p) return;
     document.getElementById('pId').value = p.id;
+    const catSel = document.getElementById('pCatSelect');
+    if (catSel) {
+      if (Array.from(catSel.options).some(o => o.value === p.category)) {
+        catSel.value = p.category;
+        document.getElementById('pCat').style.display = 'none';
+      } else {
+        catSel.value = '__new__';
+        document.getElementById('pCat').style.display = 'block';
+      }
+    }
     document.getElementById('pCat').value = p.category;
     document.getElementById('pName').value = p.name;
     document.getElementById('pDesc').value = p.description || '';
     document.getElementById('pStock').value = p.stock_kg;
+    if (document.getElementById('pBasePrice')) document.getElementById('pBasePrice').value = '';
     document.getElementById('pVariantsText').value = (p.variants || []).map(v => `${v.size}=${v.price}`).join(', ');
-        document.getElementById('pBoxWeight').value = p.box_weight_kg || 5;
+    document.getElementById('pBoxWeight').value = p.box_weight_kg || 5;
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   }
     function editGroup(id) {
     const g = (window.allGroups || []).find(x => x.id === id);
@@ -840,7 +906,73 @@ async function markWeekDone(w) {
       <script>window.onload = function(){ window.print(); };<\/script></body></html>`);
     win.document.close();
   }
-  
+    function parseVariants(str) {
+    return str.split(',').map(part => {
+      const [sz, pr] = part.split('=').map(s => s.trim());
+      const num = parseFloat((sz || '').replace(',', '.')) || 0.5;
+      let w = num;
+      const low = (sz || '').toLowerCase();
+      if (low.includes('г') && !low.includes('кг')) w = Number((num / 1000).toFixed(3));
+      else if (low.includes('шт')) w = num;
+      return { size: sz, price: Number(pr) || 0, weight_kg: w };
+    }).filter(v => v.size && v.price > 0);
+  }
+
+  function onCatSelectChange() {
+    const sel = document.getElementById('pCatSelect');
+    const inp = document.getElementById('pCat');
+    if (!sel || !inp) return;
+    if (sel.value === '__new__') {
+      inp.style.display = 'block';
+      inp.value = '';
+      inp.focus();
+    } else {
+      inp.style.display = 'none';
+      inp.value = sel.value;
+    }
+  }
+
+  function onPackTypeChange() {
+    const t = document.getElementById('pPackType').value;
+    const lbl = document.getElementById('pBasePriceLabel');
+    const inp = document.getElementById('pBasePrice');
+    if (t === 'weight') { lbl.textContent = 'Цена за 1 кг (₽) — авторасчёт'; inp.disabled = false; }
+    else if (t === 'spice') { lbl.textContent = 'Цена за 100 г (₽)'; inp.disabled = false; }
+    else if (t === 'piece') { lbl.textContent = 'Цена за 1 шт. (₽)'; inp.disabled = false; }
+    else { lbl.textContent = 'Ручной ввод фасовок ниже'; inp.disabled = true; }
+    autoCalcVariants();
+  }
+
+  function autoCalcVariants() {
+    const t = document.getElementById('pPackType').value;
+    const price = parseFloat(document.getElementById('pBasePrice').value) || 0;
+    const out = document.getElementById('pVariantsText');
+    if (!price || t === 'custom') return;
+    if (t === 'weight') {
+      out.value = `0.5 кг=${Math.round(price / 2)}, 1 кг=${Math.round(price)}`;
+    } else if (t === 'spice') {
+      out.value = `100 г=${Math.round(price)}`;
+    } else if (t === 'piece') {
+      out.value = `1 шт.=${Math.round(price)}`;
+    }
+  }
+
+  async function updPrices(id) {
+    const p = allProducts.find(x => x.id === id);
+    if (!p || !Array.isArray(p.variants)) return;
+    const newVars = p.variants.map((v, idx) => {
+      const inp = document.getElementById(`pr-${id}-${idx}`);
+      const val = inp ? (parseFloat(inp.value) || 0) : v.price;
+      return { ...v, price: val };
+    });
+    await req(`rest/v1/products?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ variants: newVars })
+    });
+    alert('✅ Цены обновлены!');
+    loadAll();
+  }
+
   if (jwt) showApp();
 </script>
 </body>
