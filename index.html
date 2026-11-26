@@ -194,6 +194,7 @@
         await syncProfile({ max_id: String(u.id), full_name: `${u.first_name || ''} ${u.last_name || ''}`.trim() });
       }
       updateUserUI();
+await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch(() => {});
 
       const [prods, grps] = await Promise.all([
         sbFetch('products?is_active=eq.true&order=sort_order.asc'),
