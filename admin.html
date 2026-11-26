@@ -209,21 +209,35 @@
     ]);
     allProducts = prods || [];
 
-    document.getElementById('ordersList').innerHTML = (ords || []).map(o => `
+       window.allOrders = ords || [];
+    window.allGroups = grps || [];
+
+    document.getElementById('ordersList').innerHTML = `
+      <div style="margin-bottom:10px; display:flex; justify-content:flex-end;">
+        <button class="btn sm" style="background:#111827;" onclick="printAllNewOrders()">🖨️ Печать всех новых на пакеты</button>
+      </div>` + (window.allOrders.map(o => {
+      const grp = window.allGroups.find(g => g.id === o.group_id);
+      const dt = new Date(o.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const numLabel = o.order_number.startsWith('№') ? o.order_number : '№' + o.id;
+      return `
       <div class="card">
         <div class="row" style="justify-content:space-between;margin-bottom:6px;">
-          <b>${o.order_number}</b>
+          <b>Заказ ${numLabel} <span style="font-weight:400; color:#6b7280; font-size:13px;">от ${dt}</span></b>
           <span class="badge ${o.status === 'new' ? 'new' : ''}">${o.status === 'new' ? 'Новый' : 'Выдан'}</span>
         </div>
-        <div style="font-size:13px;margin-bottom:6px;">📍 <b>${o.group_id}</b> | 👤 ${o.customer_name} (${o.customer_phone})</div>
+        <div style="font-size:13px;margin-bottom:6px;">📍 <b>${grp ? grp.name : o.group_id}</b> | 👤 ${o.customer_name} (${o.customer_phone})</div>
         <div style="font-size:12px;background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:8px;">
           ${(o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} = ${i.price * i.qty} ₽`).join('<br>')}
         </div>
         <div class="row" style="justify-content:space-between;">
           <b>Итого: ${o.total_amount} ₽ (${o.payment_method})</b>
-          ${o.status === 'new' ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : ''}
+          <div class="row">
+            <button class="btn sm gray" onclick="printOrders([${o.id}])">🖨️ На пакет</button>
+            ${o.status === 'new' ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : ''}
+          </div>
         </div>
-      </div>`).join('') || '<p>Заказов пока нет</p>';
+      </div>`;
+    }).join('') || '<p>Заказов пока нет</p>');
 
     document.getElementById('productsList').innerHTML = allProducts.map(p => `
       <div class="card" style="${p.is_active ? '' : 'opacity:0.6;'}">
@@ -479,6 +493,61 @@
     if (!lastSupplyText) return alert('Нет позиций для заказа поставщику (всего хватает на складе)');
     navigator.clipboard.writeText(lastSupplyText);
     alert('✅ Заявка скопирована в буфер обмена!');
+  }
+  function printAllNewOrders() {
+    const ids = (window.allOrders || []).filter(o => o.status === 'new').map(o => o.id);
+    if (!ids.length) return alert('Нет новых заказов для печати');
+    printOrders(ids);
+  }
+
+  function printOrders(ids) {
+    const list = (window.allOrders || []).filter(o => ids.includes(o.id));
+    if (!list.length) return;
+    const win = window.open('', '_blank', 'width=800,height=900');
+    const cardsHtml = list.map(o => {
+      const grp = (window.allGroups || []).find(g => g.id === o.group_id);
+      const dt = new Date(o.created_at).toLocaleDateString('ru-RU');
+      const numLabel = o.order_number.startsWith('№') ? o.order_number : '№' + o.id;
+      return `
+        <div class="slip">
+          <div class="top">
+            <div class="num">Заказ ${numLabel}</div>
+            <div class="dt">от ${dt}</div>
+          </div>
+          <div class="grp">📍 ${grp ? grp.name : o.group_id}</div>
+          <div class="cli">👤 <b>${o.customer_name}</b> • ${o.customer_phone}</div>
+          ${o.comment ? `<div class="cmt">💬 ${o.comment}</div>` : ''}
+          <table>
+            ${(o.items || []).map(i => `
+              <tr>
+                <td>${i.name} (${i.size})</td>
+                <td class="r">${i.qty} шт.</td>
+                <td class="r">${i.price * i.qty} ₽</td>
+              </tr>`).join('')}
+          </table>
+          <div class="tot">ИТОГО: ${o.total_amount} ₽ (${o.payment_method})</div>
+        </div>`;
+    }).join('');
+
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Печать заказов</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 10px; color: #000; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .slip { border: 2px dashed #333; padding: 12px; border-radius: 8px; page-break-inside: avoid; }
+        .top { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 6px; }
+        .num { font-size: 22px; font-weight: 900; }
+        .dt { font-size: 13px; }
+        .grp { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+        .cli { font-size: 14px; margin-bottom: 6px; }
+        .cmt { font-size: 12px; background: #f3f4f6; padding: 4px 6px; margin-bottom: 6px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 8px; }
+        td { border-bottom: 1px solid #ddd; padding: 4px 2px; }
+        td.r { text-align: right; white-space: nowrap; }
+        .tot { font-size: 16px; font-weight: 900; text-align: right; }
+        @media print { body { margin: 0; } }
+      </style></head><body><div class="grid">${cardsHtml}</div>
+      <script>window.onload = function(){ window.print(); };<\/script></body></html>`);
+    win.document.close();
   }
 
   if (jwt) showApp();
