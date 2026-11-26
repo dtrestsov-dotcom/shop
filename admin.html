@@ -293,8 +293,15 @@
             `).join('')}
             <button class="btn sm" style="background:#059669;" onclick="updPrices('${p.id}')">₽ ✓</button>
           </div>
-          <div class="row" style="gap:4px;">
-            <input type="number" step="0.1" id="stk-${p.id}" value="${p.stock_kg}" style="width:62px;padding:4px;border:1px solid #ccc;border-radius:6px;">
+                   <div class="row" style="gap:6px;">
+            <span style="font-size:12px;">Кор.:</span>
+            <input type="number" step="0.1" id="box-${p.id}" value="${p.box_weight_kg || 5}" style="width:50px;padding:4px;border:1px solid #ccc;border-radius:6px;">
+            <button class="btn sm" style="background:#7c3aed;" onclick="updBox('${p.id}')">📦 ✓</button>
+            <span style="font-size:12px; margin-left:4px;">Мин.:</span>
+            <input type="number" step="0.1" id="min-${p.id}" value="${p.min_stock_kg || 0}" style="width:50px;padding:4px;border:1px solid #ccc;border-radius:6px;">
+            <button class="btn sm" style="background:#d97706;" onclick="updMinStk('${p.id}')">Мин ✓</button>
+            <span style="font-size:12px; margin-left:4px;">Ост.:</span>
+            <input type="number" step="0.1" id="stk-${p.id}" value="${p.stock_kg}" style="width:56px;padding:4px;border:1px solid #ccc;border-radius:6px;">
             <button class="btn sm" onclick="updStk('${p.id}')">Кг ✓</button>
           </div>
         </div>
@@ -516,14 +523,15 @@
       });
     });
 
-    const rows = allProducts.map(p => {
+       const rows = allProducts.map(p => {
       const ordKg = Number((demand[p.id] || 0).toFixed(3));
       const freeStock = Number(p.stock_kg) || 0;
+      const minStock = Number(p.min_stock_kg) || 0;
       const boxKg = Number(p.box_weight_kg) || 5;
-      const deficitKg = freeStock < 0 ? Math.abs(freeStock) : 0;
+      const deficitKg = freeStock < minStock ? Number((minStock - freeStock).toFixed(3)) : 0;
       const boxesToBuy = deficitKg > 0 ? Math.ceil(deficitKg / boxKg) : 0;
       const buyKg = Number((boxesToBuy * boxKg).toFixed(3));
-      return { p, ordKg, freeStock, boxKg, deficitKg, boxesToBuy, buyKg };
+      return { p, ordKg, freeStock, minStock, boxKg, deficitKg, boxesToBuy, buyKg };
     }).filter(r => r.ordKg > 0 || r.deficitKg > 0);
 
     lastSupplyRows = rows;
@@ -553,7 +561,7 @@
           <div>
             <b>[${r.p.id}] ${r.p.name}</b> <small style="color:#6b7280;">(коробка: ${r.boxKg} кг)</small><br>
             <div style="font-size:13px; margin-top:4px;">
-              Заказано за период: <b>${r.ordKg} кг</b> • Свободный остаток: <b>${r.freeStock} кг</b><br>
+              Заказано за период: <b>${r.ordKg} кг</b> • Свободный остаток: <b>${r.freeStock} кг</b> (мин. запас: <b>${r.minStock} кг</b>)<br>
               ${r.boxesToBuy > 0
                 ? `<span style="color:#dc2626; font-weight:700;">👉 Заказать: ${r.boxesToBuy} кор. = ${r.buyKg} кг</span> (дефицит ${r.deficitKg} кг)`
                 : `<span style="color:#2e7d32;">✓ Хватает из наличия</span>`}
@@ -971,6 +979,25 @@ async function markWeekDone(w) {
     alert('✅ Цены обновлены!');
     loadAll();
   }
+async function updBox(id) {
+  const bw = parseFloat(document.getElementById('box-' + id).value) || 5;
+  await req(`rest/v1/products?id=eq.${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ box_weight_kg: bw })
+  });
+  alert('✅ Вес коробки обновлён!');
+  loadAll();
+}
+
+async function updMinStk(id) {
+  const ms = parseFloat(document.getElementById('min-' + id).value) || 0;
+  await req(`rest/v1/products?id=eq.${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ min_stock_kg: ms })
+  });
+  alert('✅ Минимальный остаток обновлён!');
+  loadAll();
+}
 
   if (jwt) showApp();
 </script>
