@@ -413,10 +413,14 @@
     }).join('');
   }
 
+   let lastSupplyRows = [];
+  let lastSupplyCheckedGrps = [];
+
   async function calcSupply() {
     const from = document.getElementById('supFrom').value;
     const to = document.getElementById('supTo').value;
     const checkedGrps = Array.from(document.querySelectorAll('.sup-grp:checked')).map(c => c.value);
+    lastSupplyCheckedGrps = checkedGrps;
     const resDiv = document.getElementById('supplyResult');
     resDiv.innerHTML = 'Считаем потребность...';
 
@@ -441,6 +445,8 @@
       return { p, ordKg, freeStock, boxKg, deficitKg, boxesToBuy, buyKg };
     }).filter(r => r.ordKg > 0 || r.deficitKg > 0);
 
+    lastSupplyRows = rows;
+
     if (!rows.length) {
       resDiv.innerHTML = '<div class="card">За выбранный период заказов по этим группам нет.</div>';
       lastSupplyText = '';
@@ -452,17 +458,76 @@
       .map(r => `• ${r.p.name}: ${r.boxesToBuy} кор. (${r.buyKg} кг) [не хватает ${r.deficitKg} кг, кор. ${r.boxKg} кг]`)
       .join('\n');
 
-    resDiv.innerHTML = rows.map(r => `
+    const buyRows = rows.filter(r => r.boxesToBuy > 0);
+
+    resDiv.innerHTML = (buyRows.length ? `
+      <div class="card" style="background:#f0fdf4; border:1px solid #86efac;">
+        <div style="font-size:13px; color:#166534; margin-bottom:8px;">
+          <b>Приёмка от поставщика:</b> снимите галочку с позиций, которые поставщик <b>не привёз</b> — они не попадут на склад и автоматически вычтутся из заказов клиентов.
+        </div>
+        <button class="btn" style="width:100%; background:#16a34a;" onclick="confirmSupplyReceive()">📦 Подтвердить приёмку и обновить склад</button>
+      </div>` : '') + rows.map(r => `
       <div class="card" style="border-left: 4px solid ${r.boxesToBuy > 0 ? '#dc2626' : '#2e7d32'};">
-        <b>[${r.p.id}] ${r.p.name}</b> <small style="color:#6b7280;">(коробка: ${r.boxKg} кг)</small><br>
-        <div style="font-size:13px; margin-top:4px;">
-          Заказано за период: <b>${r.ordKg} кг</b> • Свободный остаток: <b>${r.freeStock} кг</b><br>
-          ${r.boxesToBuy > 0
-            ? `<span style="color:#dc2626; font-weight:700;">👉 Заказать: ${r.boxesToBuy} кор. = ${r.buyKg} кг</span> (дефицит ${r.deficitKg} кг)`
-            : `<span style="color:#2e7d32;">✓ Хватает из наличия</span>`}
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <b>[${r.p.id}] ${r.p.name}</b> <small style="color:#6b7280;">(коробка: ${r.boxKg} кг)</small><br>
+            <div style="font-size:13px; margin-top:4px;">
+              Заказано за период: <b>${r.ordKg} кг</b> • Свободный остаток: <b>${r.freeStock} кг</b><br>
+              ${r.boxesToBuy > 0
+                ? `<span style="color:#dc2626; font-weight:700;">👉 Заказать: ${r.boxesToBuy} кор. = ${r.buyKg} кг</span> (дефицит ${r.deficitKg} кг)`
+                : `<span style="color:#2e7d32;">✓ Хватает из наличия</span>`}
+            </div>
+          </div>
+          ${r.boxesToBuy > 0 ? `
+            <div style="text-align:right; background:#f9fafb; padding:8px; border-radius:8px; border:1px solid #e5e7eb;">
+              <label style="display:flex; align-items:center; gap:5px; font-size:12px; font-weight:700; cursor:pointer; margin-bottom:4px;">
+                <input type="checkbox" class="sup-deliv-chk" data-id="${r.p.id}" data-boxkg="${r.boxKg}" checked> Привёз
+              </label>
+              <input type="number" step="1" min="0" id="sup-boxes-${r.p.id}" value="${r.boxesToBuy}" style="width:58px; padding:4px; border:1px solid #ccc; border-radius:6px; text-align:center;"> <small>кор.</small>
+            </div>` : ''}
         </div>
       </div>`).join('');
   }
+
+  async function confirmSupplyReceive() {
+    const chks = Array.from(document.querySelectorAll('.sup-deliv-chk'));
+    if (!chks.length) return;
+
+    const delivered = [];
+    const missingIds = [];
+
+    chks.forEach(c => {
+      const id = c.dataset.id;
+      const boxKg = parseFloat(c.dataset.boxkg) || 5;
+      const boxes = parseFloat(document.getElementById('sup-boxes-' + id).value) || 0;
+      if (c.checked && boxes > 0) {
+        delivered.push({ id, add_kg: Number((boxes * boxKg).toFixed(3)) });
+      } else {
+        missingIds.push(id);
+      }
+    });
+
+    const msg = `Оприходовать на склад ${delivered.length} поз.` +
+      (missingIds.length ? ` и убрать из заказов ${missingIds.length} непривезённых поз.?` : '?');
+    if (!confirm(msg)) return;
+
+    try {
+      const res = await req('rest/v1/rpc/receive_supply_and_adjust_orders', {
+        method: 'POST',
+        body: JSON.stringify({
+          p_delivered: delivered,
+          p_missing_ids: missingIds,
+          p_group_ids: lastSupplyCheckedGrps
+        })
+      });
+      alert(`✅ Склад обновлён!` + (res && res.adjusted_orders ? ` Пересчитано заказов клиентов: ${res.adjusted_orders}` : ''));
+      await loadAll();
+      await calcSupply();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
 
   function copySupply() {
     if (!lastSupplyText) return alert('Нет позиций для заказа поставщику (всего хватает на складе)');
