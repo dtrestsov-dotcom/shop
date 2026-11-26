@@ -889,7 +889,11 @@ async function markWeekDone(w) {
       });
     });
 
-    const items = Object.values(map).sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name) || a.weight_kg - b.weight_kg);
+       const items = Object.values(map).sort((a, b) => {
+      const idA = String(a.id).padStart(6, '0');
+      const idB = String(b.id).padStart(6, '0');
+      return idA.localeCompare(idB) || a.weight_kg - b.weight_kg;
+    });
 
     // Группируем по категориям для удобной фасовки
     const byCat = {};
@@ -923,7 +927,7 @@ async function markWeekDone(w) {
             <label style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px dashed #f3f4f6; font-weight:normal; color:#111827; cursor:pointer;">
               <span style="display:flex; align-items:center; gap:8px;">
                 <input type="checkbox" style="width:18px; height:18px;">
-                <span><b>${x.name}</b> — <span style="background:#fef3c7; padding:2px 6px; border-radius:6px; font-weight:700;">${x.size}</span></span>
+                                <span><small style="color:#6b7280; font-family:monospace;">[${x.id}]</small> <b>${x.name}</b> — <span style="background:#fef3c7; padding:2px 6px; border-radius:6px; font-weight:700;">${x.size}</span></span>
               </span>
               <span style="font-size:15px; font-weight:800; color:#111827;">${x.qty} шт. <small style="font-weight:400; color:#6b7280;">(${Number((x.qty * x.weight_kg).toFixed(3))} кг)</small></span>
             </label>`).join('')}
