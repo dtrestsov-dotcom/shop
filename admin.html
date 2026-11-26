@@ -486,26 +486,26 @@
       { w: 4, title: '🟢 Неделя 4', bg: '#ecfdf5' }
     ];
 
-    document.getElementById('supGroupsChecks').style.display = 'block';
+       document.getElementById('supGroupsChecks').style.display = 'block';
     document.getElementById('supGroupsChecks').innerHTML = weeks.map(wk => {
       const list = (grps || []).filter(g => (g.week_num || 1) === wk.w);
       if (!list.length) return '';
       return `
         <div style="background:${wk.bg}; border:1px solid #e5e7eb; border-radius:10px; padding:10px; margin-bottom:8px;">
           <label style="display:flex; align-items:center; gap:6px; font-weight:700; color:#111827; margin-bottom:6px; cursor:pointer;">
-            <input type="checkbox" checked onchange="toggleWeekGroups(${wk.w}, this.checked)"> ${wk.title} (выбрать/снять все)
+            <input type="checkbox" onchange="toggleWeekGroups(${wk.w}, this.checked)"> ${wk.title} (выбрать/снять все)
           </label>
-          <div class="row" style="gap:10px;">
+          <div class="row" style="gap:12px;">
             ${list.map(g => `
               <label style="display:flex; align-items:center; gap:4px; font-weight:normal; color:#111827; cursor:pointer;">
-                <input type="checkbox" class="sup-grp" data-week="${wk.w}" value="${g.id}" checked> ${g.name}
+                <input type="checkbox" class="sup-grp" data-week="${wk.w}" value="${g.id}"> ${g.name}
               </label>`).join('')}
           </div>
         </div>`;
     }).join('');
   }
 
-   let lastSupplyRows = [];
+  let lastSupplyRows = [];
   let lastSupplyCheckedGrps = [];
 
   async function calcSupply() {
@@ -514,6 +514,10 @@
     const checkedGrps = Array.from(document.querySelectorAll('.sup-grp:checked')).map(c => c.value);
     lastSupplyCheckedGrps = checkedGrps;
     const resDiv = document.getElementById('supplyResult');
+    if (!checkedGrps.length) {
+      resDiv.innerHTML = '<div class="card" style="color:#92400e; background:#fef3c7;">⚠️ Выберите нужную неделю (или конкретные группы) галочкой выше и нажмите «Рассчитать закупку».</div>';
+      return;
+    }
     resDiv.innerHTML = 'Считаем потребность...';
 
     const orders = await req(`rest/v1/orders?created_at=gte.${from}T00:00:00&created_at=lte.${to}T23:59:59&order=created_at.desc`);
