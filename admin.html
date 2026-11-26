@@ -615,7 +615,10 @@
           <button class="btn sm" style="${btnStyle(3)}" onclick="setOrderWeek(3)">🔵 Нед. 3 (${countNew(3)})</button>
           <button class="btn sm" style="${btnStyle(4)}" onclick="setOrderWeek(4)">🟢 Нед. 4 (${countNew(4)})</button>
         </div>
-        <button class="btn sm" style="width:100%; background:#111827;" onclick="${printAction}">${printTitle}</button>
+        <div class="row">
+  <button class="btn sm" style="flex:1; background:#111827;" onclick="${printAction}">${printTitle}</button>
+  ${countNew(w) > 0 ? `<button class="btn sm" style="flex:1; background:#16a34a;" onclick="markWeekDone(${w})">✅ Выдать все (${countNew(w)})</button>` : ''}
+</div>
       </div>` + (filtered.map(o => {
       const grp = window.allGroups.find(g => g.id === o.group_id);
       const wk = grp ? (grp.week_num || 1) : 1;
@@ -642,6 +645,24 @@
       </div>`;
     }).join('') || '<div class="card" style="color:#6b7280; text-align:center;">В выбранной неделе заказов пока нет</div>');
   }
+async function markWeekDone(w) {
+  const targets = (window.allOrders || []).filter(o => {
+    if (o.status !== 'new') return false;
+    if (w === 0) return true;
+    const g = (window.allGroups || []).find(x => x.id === o.group_id);
+    return (g ? (g.week_num || 1) : 1) === w;
+  });
+  if (!targets.length) return;
+  const label = w === 0 ? 'всех недель' : `Недели ${w}`;
+  if (!confirm(`Отметить как ВЫДАННЫЕ сразу ${targets.length} заказов (${label})?`)) return;
+
+  const ids = targets.map(o => o.id).join(',');
+  await req(`rest/v1/orders?id=in.(${ids})`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: 'completed' })
+  });
+  loadAll();
+}
 
   if (jwt) showApp();
 </script>
