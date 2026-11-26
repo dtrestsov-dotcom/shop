@@ -309,7 +309,7 @@
     } catch (err) { alert(err.message); } finally { b.textContent = 'Сохранить товар'; }
   }
 
-  async function saveGroup(e) {
+    async function saveGroup(e) {
     e.preventDefault();
     const pl = {
       id: document.getElementById('gId').value.trim(),
@@ -323,10 +323,16 @@
     };
     try {
       await req('rest/v1/pickup_groups', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: JSON.stringify(pl) });
-      alert('✅ Группа сохранена!'); e.target.reset(); loadAll();
-    } catch (err) { alert(err.message); }
-      let lastSupplyText = '';
-  
+      alert('✅ Группа сохранена!');
+      e.target.reset();
+      loadAll();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  let lastSupplyText = '';
+
   function initSupplyFilters(grps) {
     const today = new Date().toISOString().slice(0, 10);
     const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
@@ -336,7 +342,6 @@
       `<label style="display:flex;align-items:center;gap:4px;font-weight:normal;color:#111827;"><input type="checkbox" class="sup-grp" value="${g.id}" checked> ${g.name}</label>`
     ).join('');
   }
-
   async function calcSupply() {
     const from = document.getElementById('supFrom').value;
     const to = document.getElementById('supTo').value;
@@ -393,7 +398,7 @@
     navigator.clipboard.writeText(lastSupplyText);
     alert('✅ Заявка скопирована в буфер обмена!');
   }
-  
+
   if (jwt) showApp();
 </script>
 </body>
