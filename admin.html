@@ -253,7 +253,7 @@
   }
   async function loadAll() {
     const [ords, prods, grps] = await Promise.all([
-      req('rest/v1/orders?order=created_at.desc&limit=50'),
+           req('rest/v1/orders?order=id.desc&limit=1000'),
       req('rest/v1/products?order=sort_order.asc,id.asc'),
       req('rest/v1/pickup_groups?order=name.asc')
     ]);
