@@ -243,13 +243,12 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
     document.getElementById('productsGrid').innerHTML = products
       .filter(p => (activeCategory === 'Все' || p.category === activeCategory) && (p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)))
       .map(p => {
-        const vi = selectedVariants[p.id] || 0, v = p.variants[vi], ok = Number(p.stock_kg) > 0;
+                const vi = selectedVariants[p.id] || 0, v = p.variants[vi];
         return `<div class="card"><img class="card-img" src="${p.image_url || ph}" loading="lazy"><div class="card-body">
           <div class="card-title">${p.name}</div>
-          <div class="card-stock ${ok ? '' : 'out'}">${ok ? `В наличии: ${p.stock_kg} кг` : 'Нет в наличии'}</div>
           <div class="card-desc">${p.description || ''}</div>
           <div class="variants">${p.variants.map((it, i) => `<button class="var-btn ${i === vi ? 'active' : ''}" onclick="selectVariant('${p.id}',${i})">${it.size}</button>`).join('')}</div>
-          <div class="card-footer"><div class="price">${v.price} ₽</div><button class="add-btn" ${ok ? '' : 'disabled'} onclick="addToCart('${p.id}')">В корзину</button></div>
+          <div class="card-footer"><div class="price">${v.price} ₽</div><button class="add-btn" onclick="addToCart('${p.id}')">+ В корзину</button></div>
         </div></div>`;
       }).join('');
   }
