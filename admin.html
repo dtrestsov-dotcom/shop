@@ -509,14 +509,49 @@
     printOrders(ids);
   }
 
-  function printOrders(ids) {
+   function printOrders(ids) {
     const list = (window.allOrders || []).filter(o => ids.includes(o.id));
     if (!list.length) return;
     const win = window.open('', '_blank', 'width=800,height=900');
+
     const cardsHtml = list.map(o => {
       const grp = (window.allGroups || []).find(g => g.id === o.group_id);
       const dt = new Date(o.created_at).toLocaleDateString('ru-RU');
       const numLabel = o.order_number.startsWith('№') ? o.order_number : '№' + o.id;
+
+      let actualTotal = 0;
+      let hasPriceChange = false;
+
+      const rowsHtml = (o.items || []).map(i => {
+        const prod = (allProducts || []).find(p => p.id === i.id);
+        const curVar = prod && Array.isArray(prod.variants)
+          ? prod.variants.find(v => v.size === i.size)
+          : null;
+
+        const oldPrice = Number(i.price) || 0;
+        const newPrice = curVar && Number(curVar.price) > 0 ? Number(curVar.price) : oldPrice;
+        const changed = newPrice !== oldPrice;
+        if (changed) hasPriceChange = true;
+
+        actualTotal += newPrice * (Number(i.qty) || 1);
+
+        const priceBadge = changed
+          ? `<div class="chg">⚠️ Цена изм.: было ${oldPrice} ₽ → стало <b>${newPrice} ₽/шт.</b></div>`
+          : '';
+
+        return `
+          <tr class="${changed ? 'row-chg' : ''}">
+            <td>${i.name} (${i.size})${priceBadge}</td>
+            <td class="r">${i.qty} шт.</td>
+            <td class="r"><b>${newPrice * i.qty} ₽</b></td>
+          </tr>`;
+      }).join('');
+
+      const totalBlock = hasPriceChange
+        ? `<div class="tot-old">Предварительно при заказе: ${o.total_amount} ₽</div>
+           <div class="tot">ИТОГО К ОПЛАТЕ: ${actualTotal} ₽ (${o.payment_method})</div>`
+        : `<div class="tot">ИТОГО: ${o.total_amount} ₽ (${o.payment_method})</div>`;
+
       return `
         <div class="slip">
           <div class="top">
@@ -526,15 +561,8 @@
           <div class="grp">📍 ${grp ? grp.name : o.group_id}</div>
           <div class="cli">👤 <b>${o.customer_name}</b> • ${o.customer_phone}</div>
           ${o.comment ? `<div class="cmt">💬 ${o.comment}</div>` : ''}
-          <table>
-            ${(o.items || []).map(i => `
-              <tr>
-                <td>${i.name} (${i.size})</td>
-                <td class="r">${i.qty} шт.</td>
-                <td class="r">${i.price * i.qty} ₽</td>
-              </tr>`).join('')}
-          </table>
-          <div class="tot">ИТОГО: ${o.total_amount} ₽ (${o.payment_method})</div>
+          <table>${rowsHtml}</table>
+          ${totalBlock}
         </div>`;
     }).join('');
 
@@ -550,14 +578,18 @@
         .cli { font-size: 14px; margin-bottom: 6px; }
         .cmt { font-size: 12px; background: #f3f4f6; padding: 4px 6px; margin-bottom: 6px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 8px; }
-        td { border-bottom: 1px solid #ddd; padding: 4px 2px; }
+        td { border-bottom: 1px solid #ddd; padding: 4px 2px; vertical-align: top; }
         td.r { text-align: right; white-space: nowrap; }
+        .row-chg { background: #fef3c7; }
+        .chg { font-size: 11px; color: #92400e; margin-top: 2px; }
+        .tot-old { font-size: 12px; color: #555; text-align: right; text-decoration: line-through; }
         .tot { font-size: 16px; font-weight: 900; text-align: right; }
         @media print { body { margin: 0; } }
       </style></head><body><div class="grid">${cardsHtml}</div>
       <script>window.onload = function(){ window.print(); };<\/script></body></html>`);
     win.document.close();
   }
+
   async function cancelOrder(id, numLabel) {
     if (!confirm(`Удалить Заказ ${numLabel} и вернуть его товары на остаток склада?`)) return;
     try {
