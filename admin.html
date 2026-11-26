@@ -388,15 +388,42 @@
 
   let lastSupplyText = '';
 
+   function toggleWeekGroups(w, checked) {
+    document.querySelectorAll(`.sup-grp[data-week="${w}"]`).forEach(c => c.checked = checked);
+  }
+
   function initSupplyFilters(grps) {
     const today = new Date().toISOString().slice(0, 10);
     const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
     if (!document.getElementById('supFrom').value) document.getElementById('supFrom').value = weekAgo;
     if (!document.getElementById('supTo').value) document.getElementById('supTo').value = today;
-    document.getElementById('supGroupsChecks').innerHTML = (grps || []).map(g =>
-      `<label style="display:flex;align-items:center;gap:4px;font-weight:normal;color:#111827;"><input type="checkbox" class="sup-grp" value="${g.id}" checked> ${g.name}</label>`
-    ).join('');
+
+    const weeks = [
+      { w: 1, title: '⚪ Неделя 1', bg: '#ffffff' },
+      { w: 2, title: '🔘 Неделя 2', bg: '#f3f4f6' },
+      { w: 3, title: '🔵 Неделя 3', bg: '#eff6ff' },
+      { w: 4, title: '🟢 Неделя 4', bg: '#ecfdf5' }
+    ];
+
+    document.getElementById('supGroupsChecks').style.display = 'block';
+    document.getElementById('supGroupsChecks').innerHTML = weeks.map(wk => {
+      const list = (grps || []).filter(g => (g.week_num || 1) === wk.w);
+      if (!list.length) return '';
+      return `
+        <div style="background:${wk.bg}; border:1px solid #e5e7eb; border-radius:10px; padding:10px; margin-bottom:8px;">
+          <label style="display:flex; align-items:center; gap:6px; font-weight:700; color:#111827; margin-bottom:6px; cursor:pointer;">
+            <input type="checkbox" checked onchange="toggleWeekGroups(${wk.w}, this.checked)"> ${wk.title} (выбрать/снять все)
+          </label>
+          <div class="row" style="gap:10px;">
+            ${list.map(g => `
+              <label style="display:flex; align-items:center; gap:4px; font-weight:normal; color:#111827; cursor:pointer;">
+                <input type="checkbox" class="sup-grp" data-week="${wk.w}" value="${g.id}" checked> ${g.name}
+              </label>`).join('')}
+          </div>
+        </div>`;
+    }).join('');
   }
+
   async function calcSupply() {
     const from = document.getElementById('supFrom').value;
     const to = document.getElementById('supTo').value;
