@@ -784,7 +784,7 @@
   <button class="btn sm" style="flex:1; background:#111827;" onclick="${printAction}">${printTitle}</button>
   ${countNew(w) > 0 ? `<button class="btn sm" style="flex:1; background:#16a34a;" onclick="markWeekDone(${w})">✅ Выдать все (${countNew(w)})</button>` : ''}
 </div>
-         </div>` + (filtered.map(o => {
+           </div>` + (filtered.map(o => {
    const grp = window.allGroups.find(g => g.id === o.group_id);
    const grpTitle = getGrpName(o.group_id);
    const grpBanner = grpTitle !== lastGrpHeader
