@@ -536,7 +536,9 @@
       const freeStock = Number(p.stock_kg) || 0;
       const minStock = Number(p.min_stock_kg) || 0;
       const boxKg = Number(p.box_weight_kg) || 5;
-      const deficitKg = freeStock < minStock ? Number((minStock - freeStock).toFixed(3)) : 0;
+           const avail = freeStock > 0 ? freeStock : 0;
+      const needTotal = ordKg + minStock;
+      const deficitKg = needTotal > avail ? Number((needTotal - avail).toFixed(3)) : 0;
       const boxesToBuy = deficitKg > 0 ? Math.ceil(deficitKg / boxKg) : 0;
       const buyKg = Number((boxesToBuy * boxKg).toFixed(3));
       return { p, ordKg, freeStock, minStock, boxKg, deficitKg, boxesToBuy, buyKg };
