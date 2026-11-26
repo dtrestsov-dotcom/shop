@@ -143,6 +143,7 @@
         <div class="row">
           <button class="btn" style="flex:2;" onclick="calcSupply()">Рассчитать закупку</button>
           <button class="btn gray" style="flex:1;" onclick="copySupply()">📋 Копировать</button>
+                 <button class="btn" style="flex:1; background:#059669;" onclick="exportSupplyExcel()">📊 В Excel</button>
         </div>
       </div>
       <div id="supplyResult"></div>
@@ -554,7 +555,7 @@
 
     lastSupplyText = `Заказ поставщику (${from} — ${to}):\n` + rows
       .filter(r => r.boxesToBuy > 0)
-      .map(r => `• ${r.p.name}: ${r.boxesToBuy} кор. (${r.buyKg} кг) [не хватает ${r.deficitKg} кг, кор. ${r.boxKg} кг]`)
+            .map(r => `• ${r.p.name}: ${r.boxesToBuy} кор. (${r.buyKg} кг)`)
       .join('\n');
 
     const buyRows = rows.filter(r => r.boxesToBuy > 0);
@@ -1031,6 +1032,49 @@ async function updMinStk(id) {
   alert('✅ Минимальный остаток обновлён!');
   loadAll();
 }
+  function exportSupplyExcel() {
+    const buyRows = (lastSupplyRows || []).filter(r => r.boxesToBuy > 0);
+    if (!buyRows.length) return alert('Сначала выберите неделю и нажмите «Рассчитать закупку»');
+
+    const dt = new Date().toLocaleDateString('ru-RU');
+    const trs = buyRows.map((r, i) => `
+      <tr>
+        <td style="text-align:center;">${i + 1}</td>
+        <td>${r.p.id}</td>
+        <td>${r.p.name}</td>
+        <td style="text-align:center;"><b>${r.boxesToBuy}</b></td>
+        <td style="text-align:center;">${r.boxKg}</td>
+        <td style="text-align:right;"><b>${r.buyKg}</b></td>
+      </tr>`).join('');
+
+    const html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://w3.org">
+      <head><meta charset="utf-8"></head>
+      <body>
+        <h3>Заявка поставщику от ${dt}</h3>
+        <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse; font-family:Arial, sans-serif; font-size:12pt;">
+          <thead>
+            <tr style="background:#e5e7eb; font-weight:bold;">
+              <th>№</th>
+              <th>Артикул</th>
+              <th>Наименование</th>
+              <th>Коробок / уп.</th>
+              <th>Вес 1 кор. (кг)</th>
+              <th>Всего привезти (кг / шт.)</th>
+            </tr>
+          </thead>
+          <tbody>${trs}</tbody>
+        </table>
+      </body></html>`;
+
+    const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Заявка_поставщику_${dt}.xls`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   if (jwt) showApp();
 </script>
