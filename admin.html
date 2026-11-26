@@ -63,15 +63,20 @@
             <div class="form-group" style="flex:1;"><label>Артикул (id)*</label><input type="text" id="pId" class="form-control" placeholder="01025" required></div>
                       <div class="form-group" style="flex:2;">
             <label>Категория*</label>
-            <select id="pCatSelect" class="form-control" onchange="onCatSelectChange()">
-              <option value="Орехи и семечки">Орехи и семечки</option>
-              <option value="Сухофрукты и цукаты">Сухофрукты и цукаты</option>
-              <option value="Сладости и орехи в глазури">Сладости и орехи в глазури</option>
-              <option value="Специи и приправы">Специи и приправы</option>
-              <option value="Штучные товары">Штучные товары</option>
+                        <select id="pCatSelect" class="form-control" onchange="onCatSelectChange()">
+              <option value="Орехи">Орехи</option>
+              <option value="Сухофрукты">Сухофрукты</option>
+              <option value="Масло и соус">Масло и соус</option>
+              <option value="Сладкое">Сладкое</option>
+              <option value="Специи">Специи</option>
+              <option value="Чай">Чай</option>
+              <option value="Консервация и соусы">Консервация и соусы</option>
+              <option value="Турецкие сладости">Турецкие сладости</option>
+              <option value="Наборы">Наборы</option>
+              <option value="Сублимированные фрукты и ягоды">Сублимированные фрукты и ягоды</option>
               <option value="__new__">➕ Новая категория...</option>
             </select>
-            <input type="text" id="pCat" class="form-control" style="display:none; margin-top:6px;" placeholder="Введите название новой категории" value="Орехи и семечки" required>
+            <input type="text" id="pCat" class="form-control" style="display:none; margin-top:6px;" placeholder="Введите название новой категории" value="Орехи" required>
           </div>
           </div>
           <div class="form-group"><label>Название товара*</label><input type="text" id="pName" class="form-control" required></div>
@@ -261,7 +266,6 @@
     const catSel = document.getElementById('pCatSelect');
     if (catSel) {
       const existingCats = Array.from(new Set([
-        'Орехи и семечки', 'Сухофрукты и цукаты', 'Сладости и орехи в глазури', 'Специи и приправы', 'Штучные товары',
         ...allProducts.map(p => p.category).filter(Boolean)
       ]));
       const curVal = catSel.value;
