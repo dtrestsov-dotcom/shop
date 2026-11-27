@@ -501,7 +501,11 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
       return;
     }
 
-    const filtered = (cachedMyOrders || []).filter(o => currentCabTab === 'active' ? o.status === 'new' : o.status !== 'new');
+       const filtered = (cachedMyOrders || []).filter(o =>
+      currentCabTab === 'active'
+        ? (o.status === 'new' || o.status === 'cancel_requested')
+        : (o.status !== 'new' && o.status !== 'cancel_requested')
+    );
     if (!filtered.length) {
       list.innerHTML = `<div style="padding:24px 0; text-align:center;">${currentCabTab === 'active' ? 'Активных заказов в сборе сейчас нет' : 'Полученных заказов пока нет'}</div>`;
       return;
@@ -511,9 +515,11 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
       const idx = cachedMyOrders.indexOf(o);
       const grp = groups.find(g => g.id === o.group_id);
       const dt = new Date(o.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const statusBadge = o.status === 'new'
-        ? '<span style="background:rgba(245,158,11,0.18); color:#fbbf24; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">Принят в сбор</span>'
-        : '<span style="background:rgba(16,185,129,0.18); color:#34d399; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">Выдан ✓</span>';
+      const statusBadge = o.status === 'cancel_requested'
+        ? '<span style="background:rgba(239,68,68,0.2); color:#f87171; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">⏳ Запрос отмены</span>'
+        : (o.status === 'new'
+          ? '<span style="background:rgba(245,158,11,0.18); color:#fbbf24; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">Принят в сбор</span>'
+          : '<span style="background:rgba(16,185,129,0.18); color:#34d399; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">Выдан ✓</span>');
       return `
         <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:10px; color:var(--text);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
@@ -526,12 +532,38 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
           <div style="background:var(--bg); border:1px solid var(--border); padding:8px 10px; border-radius:10px; font-size:12px; color:#d1d5db; line-height:1.45; margin-bottom:8px;">
             ${(o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} шт. — <b>${i.price * i.qty} ₽</b>`).join('<br>')}
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;">
             <b style="color:#34d399; font-size:14px;">Итого: ${o.total_amount} ₽</b>
-            <button class="pill-btn" style="background:rgba(16,185,129,0.15); border-color:var(--accent); color:#34d399;" onclick="repeatOrder(${idx})">🔄 Повторить заказ</button>
+            <div style="display:flex; gap:6px;">
+              ${o.status === 'new' ? `<button class="pill-btn" style="background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.4); color:#f87171;" onclick="requestOrderCancel(${o.id})">❌ Отменить</button>` : ''}
+              <button class="pill-btn" style="background:rgba(16,185,129,0.15); border-color:var(--accent); color:#34d399;" onclick="repeatOrder(${idx})">🔄 Повторить</button>
+            </div>
           </div>
         </div>`;
     }).join('');
+  }
+
+  async function requestOrderCancel(orderId) {
+    const reason = prompt('Укажите причину отмены заказа (необязательно):');
+    if (reason === null) return;
+    const o = (cachedMyOrders || []).find(x => x.id === orderId);
+    const newComment = [o?.comment, reason ? `Запрос отмены: ${reason}` : 'Запрос отмены от клиента'].filter(Boolean).join(' | ');
+    await fetch(`${PROXY_URL}/rest/v1/orders?id=eq.${orderId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: 'cancel_requested', comment: newComment })
+    });
+    fetch(`${PROXY_URL}/notify-cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id: orderId, order_number: o?.order_number || '#' + orderId, customer_name: o?.customer_name, customer_phone: o?.customer_phone, reason })
+    }).catch(() => {});
+    alert('✅ Запрос на отмену отправлен администратору. После подтверждения заказ будет отменён.');
+    loadMyOrders();
   }
 
   function repeatOrder(idx) {
