@@ -324,15 +324,19 @@
       return `
         <div style="margin-top:16px; margin-bottom:6px; font-weight:700; font-size:15px;">${m.title} (${list.length})</div>
         ${list.map(g => `
-          <div class="card" style="background:${m.bg}; border-left:4px solid ${m.border};">
-            <div class="row" style="justify-content:space-between;">
-              <div>
-                <b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
-                <small>Сбор: <b>${g.collect_until || '-'}</b> | Выдача: <b>${g.delivery_date || '-'}</b> | ${g.address || ''}</small>
-              </div>
+                  <div class="card" style="background:${m.bg}; border-left:4px solid ${m.border};">
+          <div class="row" style="justify-content:space-between; gap:8px; flex-wrap:wrap;">
+            <div>
+              <b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
+              <small>Сбор до: <b>${g.collect_until || '-'}</b> | Выдача: <b>${g.delivery_date || '-'}</b> ${g.delivery_time || ''} ${g.address || ''}</small><br>
+              <small style="color:#6b7280;">TG чат: <code>${g.telegram_chat_id || 'не задан'}</code> | MAX чат: <code>${g.max_chat_id || 'не задан'}</code></small>
+            </div>
+            <div class="row" style="gap:6px;">
+              <button class="btn sm" style="background:#059669;" onclick="announceDeliveryToday('${g.id}')">📢 Выдача сегодня</button>
               <button class="btn sm" style="background:#2563eb;" onclick="editGroup('${g.id}')">✏️ Изм.</button>
             </div>
-          </div>`).join('') || '<div class="card" style="color:#6b7280;font-size:13px;">В этой неделе пока нет групп</div>'}`;
+          </div>
+        </div>`).join('') || '<div class="card" style="color:#6b7280;font-size:13px;">В этой неделе пока нет групп</div>'}
     }).join('');
 
         initSupplyFilters(grps);
@@ -377,6 +381,35 @@
     document.getElementById('gMax').value = g.max_chat_id || '';
     document.getElementById('gTg').value = g.telegram_chat_id || '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  async function announceDeliveryToday(id) {
+    const g = (window.allGroups || []).find(x => x.id === id);
+    if (!g) return;
+    if (!g.telegram_chat_id && !g.max_chat_id) {
+      alert('У этой группы не указан ID Telegram или MAX чата. Нажмите «✏️ Изм.» и укажите ID чата.');
+      return;
+    }
+    const dateStr = [g.delivery_date, g.delivery_time].filter(Boolean).join(' ');
+    if (!confirm(`Отправить в чат ЖК «${g.name}» объявление:\n\n🚚 Выдача заказов СЕГОДНЯ (${dateStr})?`)) return;
+
+    const relayHost = 'tg-relay.dtrestsov.' + 'workers.dev';
+    const res = await fetch(`https://${relayHost}?announce=delivery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        group_id: g.id,
+        group_name: g.name,
+        delivery_date: dateStr,
+        address: g.address || '',
+        tg_chat_id: g.telegram_chat_id || '',
+        max_chat_id: g.max_chat_id || ''
+      })
+    });
+    if (res.ok) {
+      alert('✅ Объявление о выдаче сегодня успешно отправлено в группу ЖК!');
+    } else {
+      alert('Ошибка отправки объявления. Проверьте, добавлен ли бот в чат ЖК как администратор.');
+    }
   }
 
   async function updStk(id) {
