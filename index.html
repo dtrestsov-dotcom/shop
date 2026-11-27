@@ -548,12 +548,12 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
     if (reason === null) return;
     const o = (cachedMyOrders || []).find(x => x.id === orderId);
     const phone = currentUser?.phone || o?.customer_phone || '';
-    const res = await fetch(`${PROXY_URL}/rest/v1/orders`, {
+       const res = await fetch(`${PROXY_URL}/rest/v1/orders?apikey=${SUPABASE_ANON_KEY}`, {
       method: 'POST',
       headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json'
+        'Content-Type': 'text/plain;charset=UTF-8'
       },
+
       body: JSON.stringify({
         group_id: String(orderId),
         customer_name: o?.customer_name || 'Клиент',
