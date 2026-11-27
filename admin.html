@@ -390,10 +390,10 @@
       return;
     }
     const dateStr = [g.delivery_date, g.delivery_time].filter(Boolean).join(' ');
-    if (!confirm(`Отправить в чат ЖК «${g.name}» объявление:\n\n🚚 Выдача заказов СЕГОДНЯ (${dateStr})?`)) return;
+        if (!confirm('Отправить в чат ЖК «' + g.name + '» объявление:\n\n🚚 Выдача заказов СЕГОДНЯ (' + dateStr + ')?')) return;
 
     const relayHost = 'tg-relay.dtrestsov.' + 'workers.dev';
-    const res = await fetch(`https://${relayHost}?announce=delivery`, {
+    const res = await fetch('https://' + relayHost + '?announce=delivery', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
