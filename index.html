@@ -341,7 +341,7 @@
           headers: { 'Prefer': 'return=representation' },
           body: JSON.stringify(merged)
         });
-        p = (Array.isArray(upd) ? upd : upd) || { ...p, ...merged };
+             p = (Array.isArray(upd) ? upd.at(0) : upd) || { ...p, ...merged };
       }
 
       if (p) {
