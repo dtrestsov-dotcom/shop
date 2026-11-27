@@ -832,7 +832,7 @@
       const doneBtn = o.status === `new` ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : ``;
       const badgeHtml = isCancelReq
         ? '<span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Запрос отмены</span>'
-        : `<span class="badge ${o.status === 'new' ? 'new' : ``}">${o.status === `new` ? 'Новый' : 'Выдан'}</span>`;
+        : `<span class="badge ${o.status === 'new' ? 'new` : ``}">${o.status === `new` ? `Новый' : 'Выдан'}</span>`;
       const cancelBtns = isCancelReq
         ? `<button class="btn sm" style="background:#dc2626;" onclick="cancelOrder(${o.id}, `${numLabel}`)">✅ Подтвердить отмену</button>
            <button class="btn sm gray" onclick="rejectCancel(${o.id})">↩️ Оставить</button>`
