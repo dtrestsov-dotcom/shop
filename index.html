@@ -737,7 +737,11 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
         cart = []; updateCartBar(); closeModal('cartModal'); init();
       } catch (err) { alert('Ошибка: ' + err.message); } finally { btn.disabled = false; btn.textContent = 'Оформить заказ'; }
     }
+     if (!window.Telegram?.WebApp?.initDataUnsafe?.user && !window.WebApp?.initDataUnsafe?.user && currentUser?.phone) {
+    syncProfile({ phone: currentUser.phone }).finally(() => init());
+  } else {
     init();
+  }
     if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
       loginViaMessenger('tg');
     }
