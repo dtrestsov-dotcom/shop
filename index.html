@@ -321,8 +321,11 @@
           headers: { 'Prefer': 'return=representation' },
           body: JSON.stringify(userData)
         });
-        p = Array.isArray(cr) ? cr : cr;
-      } else {
+       p = Array.isArray(cr) ? cr[0] : cr;
+     } else {
+  if (Array.isArray(p)) p = p[0];
+  if (Array.isArray(phoneProf)) phoneProf = phoneProf[0];
+  if (phoneProf && phoneProf.id !== p.id) {
         if (phoneProf && phoneProf.id !== p.id) {
           await sbFetch(`profiles?id=eq.${phoneProf.id}`, { method: 'DELETE' }).catch(() => {});
         }
