@@ -617,31 +617,33 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
   async function submitOrder(e) {
     e.preventDefault();
     if (!cart.length) return alert('Корзина пуста');
-    const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.textContent = 'Оформляем...';
-    const gId = document.getElementById('groupSelect').value, name = document.getElementById('clientName').value.trim(), phone = document.getElementById('clientPhone').value.trim();
-    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-    try {
-            if (!currentUser || !currentUser.phone || currentUser.phone !== phone) {
+         const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.textContent = 'Оформляем...';
+      const gid = document.getElementById('groupSelect')?.value || '';
+      const name = document.getElementById('clientName').value.trim();
+      const phone = document.getElementById('clientPhone').value.trim();
+      const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+      try {
+        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
         await syncProfile({
           phone,
           full_name: name || currentUser?.full_name || '',
-          telegram_id: currentUser?.telegram_id || null,
+          telegram_id: (tgUser ? String(tgUser.id) : null) || currentUser?.telegram_id || null,
           max_user_id: currentUser?.max_user_id || null,
           default_group_id: gid
         });
-      }
-      const data = await sbFetch('rpc/create_order_and_deduct_stock', {
-        method: 'POST',
-        body: JSON.stringify({ p_user_id: currentUser?.id || null, p_group_id: gId, p_name: name, p_phone: phone, p_items: cart, p_total: total, p_payment: document.getElementById('paymentSelect').value, p_comment: document.getElementById('clientComment').value.trim() })
-      });
-      alert(`✅ Заказ ${data.order_number} оформлен на ${total} ₽!`);
-      cart = []; updateCartBar(); closeModal('cartModal'); init();
-    } catch (err) { alert('Ошибка: ' + err.message); } finally { btn.disabled = false; btn.textContent = 'Оформить заказ'; }
-  }
-  init();
-  if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
-    loginViaMessenger('tg');
-  }
+        const data = await sbFetch('rpc/create_order_and_deduct_stock', {
+          method: 'POST',
+          body: JSON.stringify({ p_user_id: currentUser?.id || null, p_group_id: gid, p_name: name, p_phone: phone, p_items: cart, p_total: total, p_payment: document.getElementById('paymentSelect').value, p_comment: document.getElementById('orderComment').value.trim() })
+        });
+        alert(`Заказ ${data.order_number} оформлен на ${total} ₽!`);
+        cart = []; updateCartBar(); closeModal('cartModal'); init();
+      } catch (err) { alert('Ошибка: ' + err.message); } finally { btn.disabled = false; btn.textContent = 'Оформить заказ'; }
+    }
+    init();
+    if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+      loginViaMessenger('tg');
+    }
+
   (function initPhoneMask() {
     const formatRuPhone = (raw) => {
       let digits = raw.replace(/\D/g, '');
