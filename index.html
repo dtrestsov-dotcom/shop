@@ -7,7 +7,7 @@
   <link rel="manifest" href="manifest.json">
   <title>Орехи и Сухофрукты</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script async src="https://telegram.org/js/telegram-widget.js?22"></script>
+  <script src="https://telegram.org/js/telegram-widget.js?22"></script>
   <style>
      :root {
     --bg: #0f1115;
@@ -607,17 +607,24 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
       closeModal('authModal');
       return;
     }
-        if (t === 'tg' && window.Telegram?.Login?.auth) {
-      window.Telegram.Login.auth(
-        { bot_id: '7447590570', request_access: 'write' },
-        async (data) => {
-          if (!data) return;
-          const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ') || data.username || 'Клиент Telegram';
-          await syncProfile({ telegram_id: String(data.id), full_name: fullName });
-          closeModal('authModal');
-        }
-      );
+           if (t === 'tg') {
+      if (window.Telegram?.Login?.auth) {
+        window.Telegram.Login.auth(
+          { bot_id: '7447590570', request_access: 'write' },
+          async (data) => {
+            if (!data) return;
+            const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ') || data.username || 'Клиент Telegram';
+            await syncProfile({ telegram_id: String(data.id), full_name: fullName });
+            closeModal('authModal');
+          }
+        );
+      } else {
+        alert('Виджет Telegram не загрузился (возможно, без VPN). Введите номер телефона и имя ниже — вход работает без мессенджера.');
+      }
       return;
+    }
+    alert('Откройте витрину через бота в MAX для входа в 1 клик, либо введите телефон ниже.');
+
     }
 
     alert('Откройте витрину через бота в MAX для входа в 1 клик, либо введите телефон ниже.');
