@@ -294,13 +294,13 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
   }
 
    const CAT_ICONS = {
-    'Все': '✨', 'Орехи': '🥜', 'Сухофрукты': '🥭', 'Масло и соус': '🫒',
+     'Все': '✨', '❤️ Избранное': '❤️', 'Орехи': '🥜', 'Сухофрукты': '🥭', 'Масло и соус': '🫒',
     'Сладкое': '🍫', 'Специи': '🌶️', 'Чай': '🍵', 'Консервация и соусы': '🫙',
     'Турецкие сладости': '🍯', 'Наборы': '🎁', 'Сублимированные фрукты и ягоды': '🍓'
   };
 
   function renderCategories() {
-    const cats = ['Все', ...new Set(products.map(p => p.category))];
+      const cats = ['Все', '❤️ Избранное', ...new Set(products.map(p => p.category))];
     document.getElementById('catsBar').innerHTML = cats.map(c => `
       <div class="oz-cat-tile ${c === activeCategory ? 'active' : ''}" onclick="setCategory('${c}')">
         <div class="oz-cat-box">${CAT_ICONS[c] || '🌿'}</div>
@@ -326,13 +326,18 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
       : '👆 Выберите вашу группу, чтобы увидеть дату выдачи';
   }
   function renderProducts() {
-    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+       const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    const favs = getFavs();
     document.getElementById('productsGrid').innerHTML = products
-      .filter(p => (activeCategory === 'Все' || p.category === activeCategory) && (p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)))
+      .filter(p => {
+        const matchCat = activeCategory === 'Все' ? true : (activeCategory === '❤️ Избранное' ? favs.includes(p.id) : p.category === activeCategory);
+        return matchCat && (p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q));
+      })
       .sort((a, b) => String(a.id).padStart(6, '0').localeCompare(String(b.id).padStart(6, '0')))
       .map(p => {
         const vi = selectedVariants[p.id] || 0, v = p.variants[vi];
         const inCart = cart.find(c => c.id === p.id && c.size === v.size);
+        const isFav = favs.includes(p.id);
         const ico = CAT_ICONS[p.category] || '🥜';
         const imgHtml = p.image_url
           ? `<img class="card-img" src="${p.image_url}" loading="lazy">`
@@ -343,6 +348,7 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
         return `<div class="card">
           <div class="card-img-wrap">
             <span class="card-art">арт. ${p.id}</span>
+            <button onclick="event.stopPropagation(); toggleFav('${p.id}')" style="position:absolute; top:6px; right:6px; z-index:2; width:30px; height:30px; border-radius:50%; border:1px solid var(--border); background:rgba(15,17,21,0.78); font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center;">${isFav ? '❤️' : '🤍'}</button>
             ${imgHtml}
           </div>
           <div class="card-body">
@@ -354,6 +360,7 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
           </div>
         </div>`;
       }).join('');
+
   }
 
   function selectVariant(id, i) { selectedVariants[id] = i; renderProducts(); }
@@ -427,36 +434,100 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
       const orders = await sbFetch(`orders?${filter}&order=created_at.desc&limit=20`);
       cachedMyOrders = orders || [];
 
-      if (!cachedMyOrders.length) {
-        list.innerHTML = '<p style="padding:16px 0; text-align:center;">У вас пока нет оформленных заказов.</p>';
+           setCabTab(currentCabTab);
+    } catch (err) {
+      list.innerHTML = `<p style="color:#dc2626;">Ошибка загрузки: ${err.message}</p>`;
+    }
+  }
+
+  let currentCabTab = 'active';
+
+  function getFavs() {
+    try { return JSON.parse(localStorage.getItem('nut_favs') || '[]'); } catch { return []; }
+  }
+
+  function toggleFav(id) {
+    const favs = getFavs();
+    const idx = favs.indexOf(id);
+    if (idx === -1) favs.push(id); else favs.splice(idx, 1);
+    localStorage.setItem('nut_favs', JSON.stringify(favs));
+    renderProducts();
+    if (document.getElementById('authModal').classList.contains('open')) renderCabinetContent();
+  }
+
+  function setCabTab(tab) {
+    currentCabTab = tab;
+    ['active', 'done', 'fav'].forEach(t => {
+      const btn = document.getElementById('cabTab' + t.charAt(0).toUpperCase() + t.slice(1));
+      if (!btn) return;
+      const isAct = t === tab;
+      btn.style.background = isAct ? 'rgba(16,185,129,0.2)' : 'var(--surface-2)';
+      btn.style.borderColor = isAct ? 'var(--accent)' : 'var(--border)';
+      btn.style.color = isAct ? '#34d399' : 'var(--text)';
+    });
+    renderCabinetContent();
+  }
+
+  function renderCabinetContent() {
+    const list = document.getElementById('myOrdersList');
+    if (!list) return;
+
+    if (currentCabTab === 'fav') {
+      const favIds = getFavs();
+      const favProds = products.filter(p => favIds.includes(p.id));
+      if (!favProds.length) {
+        list.innerHTML = '<div style="padding:24px 0; text-align:center;">Вы пока не добавили товары в избранное.<br><small>Нажмите 🤍 на карточке любого товара на витрине.</small></div>';
         return;
       }
-
-      list.innerHTML = cachedMyOrders.map((o, idx) => {
-        const grp = groups.find(g => g.id === o.group_id);
-        const dt = new Date(o.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const statusBadge = o.status === 'new'
-          ? '<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">Принят в сбор</span>'
-          : '<span style="background:#e8f5e9; color:#2e7d32; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">Выдан ✓</span>';
-
-                return `
-          <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:10px; color:var(--text);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <b style="color:#fff;">Заказ ${o.order_number || '#' + o.id} от ${dt}</b>
-              ${statusBadge}
+      list.innerHTML = favProds.map(p => {
+        const v = (p.variants && p.variants) || { size: '', price: 0 };
+        return `
+          <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <div>
+              <b style="color:#fff; font-size:13px;">${p.name}</b><br>
+              <span style="color:#34d399; font-weight:700;">${v.price} ₽</span> <small style="color:var(--muted);">(${v.size})</small>
             </div>
-            <div style="font-size:12px; color:var(--muted); margin-bottom:8px;">
-              📍 Группа: <b style="color:#e5e7eb;">${grp ? grp.name : o.group_id}</b>${grp?.delivery_date ? ` • Выдача: <b style="color:#34d399;">${grp.delivery_date}</b>` : ''}
-            </div>
-            <div style="background:var(--bg); border:1px solid var(--border); padding:8px 10px; border-radius:10px; font-size:12px; color:#d1d5db; line-height:1.45; margin-bottom:8px;">
-              ${(o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} шт. — <b>${i.price * i.qty} ₽</b>`).join('<br>')}
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <b style="color:#34d399; font-size:14px;">Итого: ${o.total_amount} ₽</b>
-              <button class="pill-btn" style="background:rgba(16,185,129,0.15); border-color:var(--accent); color:#34d399;" onclick="repeatOrder(${idx})">🔄 Повторить заказ</button>
+            <div style="display:flex; gap:6px;">
+              <button class="pill-btn" style="background:var(--accent); color:#052e16; border:none;" onclick="addToCart('${p.id}'); closeModal('authModal'); openCart();">В корзину</button>
+              <button class="pill-btn" onclick="toggleFav('${p.id}')">💔</button>
             </div>
           </div>`;
       }).join('');
+      return;
+    }
+
+    const filtered = (cachedMyOrders || []).filter(o => currentCabTab === 'active' ? o.status === 'new' : o.status !== 'new');
+    if (!filtered.length) {
+      list.innerHTML = `<div style="padding:24px 0; text-align:center;">${currentCabTab === 'active' ? 'Активных заказов в сборе сейчас нет' : 'Полученных заказов пока нет'}</div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(o => {
+      const idx = cachedMyOrders.indexOf(o);
+      const grp = groups.find(g => g.id === o.group_id);
+      const dt = new Date(o.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const statusBadge = o.status === 'new'
+        ? '<span style="background:rgba(245,158,11,0.18); color:#fbbf24; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">Принят в сбор</span>'
+        : '<span style="background:rgba(16,185,129,0.18); color:#34d399; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">Выдан ✓</span>';
+      return `
+        <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:10px; color:var(--text);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <b style="color:#fff;">Заказ ${o.order_number || '#' + o.id} от ${dt}</b>
+            ${statusBadge}
+          </div>
+          <div style="font-size:12px; color:var(--muted); margin-bottom:8px;">
+            📍 Группа: <b style="color:#e5e7eb;">${grp ? grp.name : o.group_id}</b>${grp?.delivery_date ? ` • Выдача: <b style="color:#34d399;">${grp.delivery_date}</b>` : ''}
+          </div>
+          <div style="background:var(--bg); border:1px solid var(--border); padding:8px 10px; border-radius:10px; font-size:12px; color:#d1d5db; line-height:1.45; margin-bottom:8px;">
+            ${(o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} шт. — <b>${i.price * i.qty} ₽</b>`).join('<br>')}
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <b style="color:#34d399; font-size:14px;">Итого: ${o.total_amount} ₽</b>
+            <button class="pill-btn" style="background:rgba(16,185,129,0.15); border-color:var(--accent); color:#34d399;" onclick="repeatOrder(${idx})">🔄 Повторить заказ</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
 
     } catch (err) {
       list.innerHTML = `<p style="color:#dc2626;">Ошибка загрузки: ${err.message}</p>`;
