@@ -633,7 +633,7 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
         });
         const data = await sbFetch('rpc/create_order_and_deduct_stock', {
           method: 'POST',
-          body: JSON.stringify({ p_user_id: currentUser?.id || null, p_group_id: gid, p_name: name, p_phone: phone, p_items: cart, p_total: total, p_payment: document.getElementById('paymentSelect').value, p_comment: document.getElementById('orderComment').value.trim() })
+                 body: JSON.stringify({ p_user_id: currentUser?.id || null, p_group_id: gid, p_name: name, p_phone: phone, p_items: cart, p_total: total, p_payment: document.getElementById('paymentSelect')?.value || 'Наличными', p_comment: (document.getElementById('clientComment') || document.getElementById('orderComment'))?.value.trim() || '' })
         });
         alert(`Заказ ${data.order_number} оформлен на ${total} ₽!`);
         cart = []; updateCartBar(); closeModal('cartModal'); init();
