@@ -412,18 +412,18 @@
     }
   }
 
-  async function updStk(id) {
+    async function updStk(id) {
     const v = parseFloat(document.getElementById('stk-' + id).value) || 0;
-    await req(`rest/v1/products?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ stock_kg: v }) });
+    await req('rest/v1/products?id=eq.' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify({ stock_kg: v }) });
     alert('Остаток обновлен!');
   }
   async function togProd(id, st) {
-    await req(`rest/v1/products?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ is_active: st }) });
+    await req('rest/v1/products?id=eq.' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify({ is_active: st }) });
     loadAll();
   }
   async function delProd(id) {
-    if (!confirm(`Удалить товар [${id}] навсегда?`)) return;
-    await req(`rest/v1/products?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+    if (!confirm('Удалить товар [' + id + '] навсегда?')) return;
+    await req('rest/v1/products?id=eq.' + encodeURIComponent(id), { method: 'DELETE' });
     loadAll();
   }
   async function markDone(id) {
