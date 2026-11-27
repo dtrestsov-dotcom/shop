@@ -573,11 +573,17 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
     openCart();
   }
 
-  function openCart() {
-  updateUserUI();
-  renderCartItems();
-  document.getElementById('cartModal').classList.add('open');
-}
+    function openCart() {
+    updateUserUI();
+    if (currentUser) {
+      const nInp = document.getElementById('clientName');
+      const pInp = document.getElementById('clientPhone');
+      if (nInp && currentUser.full_name) nInp.value = currentUser.full_name;
+      if (pInp && currentUser.phone) pInp.value = currentUser.phone;
+    }
+    renderCartItems();
+    document.getElementById('cartModal').classList.add('open');
+  }
 
   function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
