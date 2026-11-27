@@ -543,19 +543,28 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
     }).join('');
   }
 
-    async function requestOrderCancel(orderId) {
+      async function requestOrderCancel(orderId) {
     const reason = prompt('Укажите причину отмены заказа (необязательно):');
     if (reason === null) return;
     const o = (cachedMyOrders || []).find(x => x.id === orderId);
     const phone = currentUser?.phone || o?.customer_phone || '';
-    const res = await fetch(`${PROXY_URL}/rest/v1/rpc/request_order_cancel`, {
+    const res = await fetch(`${PROXY_URL}/rest/v1/orders`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ p_order_id: orderId, p_phone: phone, p_reason: reason })
+      body: JSON.stringify({
+        group_id: String(orderId),
+        customer_name: o?.customer_name || 'Клиент',
+        customer_phone: phone,
+        payment_method: 'cancel',
+        comment: reason ? `Запрос отмены: ${reason}` : 'Запрос отмены от клиента',
+        items: [],
+        total_amount: 0,
+        status: 'cancel_req_proxy'
+      })
     });
     if (!res.ok) {
       alert('Ошибка отправки запроса на отмену. Попробуйте ещё раз.');
