@@ -607,7 +607,7 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
       closeModal('authModal');
       return;
     }
-           if (t === 'tg') {
+             if (t === 'tg') {
       if (window.Telegram?.Login?.auth) {
         window.Telegram.Login.auth(
           { bot_id: '7447590570', request_access: 'write' },
@@ -624,13 +624,7 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
       return;
     }
     alert('Откройте витрину через бота в MAX для входа в 1 клик, либо введите телефон ниже.');
-
-    }
-
-    alert('Откройте витрину через бота в MAX для входа в 1 клик, либо введите телефон ниже.');
-
   }
-
 
   async function submitOrder(e) {
     e.preventDefault();
