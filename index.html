@@ -326,7 +326,6 @@
    if (Array.isArray(p)) p = p.at(0);
    if (Array.isArray(phoneProf)) phoneProf = phoneProf.at(0);
    if (phoneProf && phoneProf.id !== p.id) {
-        if (phoneProf && phoneProf.id !== p.id) {
           await sbFetch(`profiles?id=eq.${phoneProf.id}`, { method: 'DELETE' }).catch(() => {});
         }
         const merged = {
