@@ -606,7 +606,15 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
       closeModal('authModal');
       return;
     }
-    alert(`Откройте витрину через бота в ${t === 'tg' ? 'Telegram' : 'MAX'} для входа в 1 клик, либо введите телефон ниже.`);
+        if (t === 'tg') {
+      const botLink = 'https://t.' + 'me/Podarochnii_bot?start=shop';
+      if (confirm('Открыть бот в Telegram для входа в 1 клик? (Или нажмите Отмена и введите телефон ниже)')) {
+        window.location.href = botLink;
+      }
+      return;
+    }
+    alert('Откройте витрину через бота в MAX для входа в 1 клик, либо введите телефон ниже.');
+
   }
 
 
