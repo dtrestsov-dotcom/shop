@@ -48,8 +48,8 @@
   </div>
   <div class="tabs">
     <div class="tab active" onclick="switchTab('orders', this)">📦 Заказы</div>
-        <div class="tab" onclick="switchTab('supply', this)">🚚 Закупка</div>
-        <div class="tab" onclick="switchTab('packing', this)">⚖️ Фасовка</div>
+    <div class="tab" onclick="switchTab('supply', this)">🚚 Закупка</div>
+    <div class="tab" onclick="switchTab('packing', this)">⚖️ Фасовка</div>
     <div class="tab" onclick="switchTab('products', this)">🥜 Товары и склад</div>
     <div class="tab" onclick="switchTab('groups', this)">📍 Группы и даты</div>
   </div>
@@ -61,23 +61,23 @@
         <form onsubmit="saveProduct(event)">
           <div class="row">
             <div class="form-group" style="flex:1;"><label>Артикул (id)*</label><input type="text" id="pId" class="form-control" placeholder="01025" required></div>
-                      <div class="form-group" style="flex:2;">
-            <label>Категория*</label>
-                        <select id="pCatSelect" class="form-control" onchange="onCatSelectChange()">
-              <option value="Орехи">Орехи</option>
-              <option value="Сухофрукты">Сухофрукты</option>
-              <option value="Масло и соус">Масло и соус</option>
-              <option value="Сладкое">Сладкое</option>
-              <option value="Специи">Специи</option>
-              <option value="Чай">Чай</option>
-              <option value="Консервация и соусы">Консервация и соусы</option>
-              <option value="Турецкие сладости">Турецкие сладости</option>
-              <option value="Наборы">Наборы</option>
-              <option value="Сублимированные фрукты и ягоды">Сублимированные фрукты и ягоды</option>
-              <option value="__new__">➕ Новая категория...</option>
-            </select>
-            <input type="text" id="pCat" class="form-control" style="display:none; margin-top:6px;" placeholder="Введите название новой категории" value="Орехи" required>
-          </div>
+            <div class="form-group" style="flex:2;">
+              <label>Категория*</label>
+              <select id="pCatSelect" class="form-control" onchange="onCatSelectChange()">
+                <option value="Орехи">Орехи</option>
+                <option value="Сухофрукты">Сухофрукты</option>
+                <option value="Масло и соус">Масло и соус</option>
+                <option value="Сладкое">Сладкое</option>
+                <option value="Специи">Специи</option>
+                <option value="Чай">Чай</option>
+                <option value="Консервация и соусы">Консервация и соусы</option>
+                <option value="Турецкие сладости">Турецкие сладости</option>
+                <option value="Наборы">Наборы</option>
+                <option value="Сублимированные фрукты и ягоды">Сублимированные фрукты и ягоды</option>
+                <option value="__new__">➕ Новая категория...</option>
+              </select>
+              <input type="text" id="pCat" class="form-control" style="display:none; margin-top:6px;" placeholder="Введите название новой категории" value="Орехи" required>
+            </div>
           </div>
           <div class="form-group"><label>Название товара*</label><input type="text" id="pName" class="form-control" required></div>
           <div class="form-group"><label>Описание</label><input type="text" id="pDesc" class="form-control"></div>
@@ -92,7 +92,7 @@
       </div>
       <div id="productsList"></div>
     </div>
-       <div id="tab-groups" class="hidden">
+    <div id="tab-groups" class="hidden">
       <div class="card">
         <h3 style="margin-bottom:10px; font-size:15px;">➕ Добавить / Изменить группу (4-недельный цикл)</h3>
         <form onsubmit="saveGroup(event)">
@@ -127,8 +127,7 @@
       </div>
       <div id="groupsList"></div>
     </div>
-
-        <!-- ВКЛАДКА 4: ЗАКУПКА У ПОСТАВЩИКА -->
+    <!-- ВКЛАДКА 4: ЗАКУПКА У ПОСТАВЩИКА -->
     <div id="tab-supply" class="hidden">
       <div class="card">
         <h3 style="margin-bottom:10px; font-size:15px;">📊 Сводка заказа поставщику</h3>
@@ -143,13 +142,13 @@
         <div class="row">
           <button class="btn" style="flex:2;" onclick="calcSupply()">Рассчитать закупку</button>
           <button class="btn gray" style="flex:1;" onclick="copySupply()">📋 Копировать</button>
-                 <button class="btn" style="flex:1; background:#059669;" onclick="exportSupplyExcel()">📊 В Excel</button>
+          <button class="btn" style="flex:1; background:#059669;" onclick="exportSupplyExcel()">📊 В Excel</button>
         </div>
       </div>
       <div id="supplyResult"></div>
     </div>
-  </div>
-      <!-- ВКЛАДКА 5: ЛИСТ ФАСОВКИ -->
+
+    <!-- ВКЛАДКА 5: ЛИСТ ФАСОВКИ -->
     <div id="tab-packing" class="hidden">
       <div class="card" style="padding:10px; margin-bottom:10px;">
         <div style="font-size:12px; font-weight:700; color:#6b7280; margin-bottom:6px;">⚖️ Выберите неделю для расчёта фасовки (по новым заказам):</div>
@@ -164,10 +163,11 @@
       </div>
       <div id="packingResult"></div>
     </div>
+  </div>
 </div>
 <script>
-  const PROXY = 'https://functions.yandexcloud.net/d4e8bc8b2ghfd5kgtm3j';
-  const SB_URL = 'https://bhfzkdduwabffqgpcgdt.supabase.co';
+  const PROXY = 'https://yandexcloud.net';
+  const SB_URL = 'https://supabase.co';
   const PUB = 'sb_publishable_0e8FU4Ejk9d_IoLp8bh-zw_oOOQNaI8';
   let jwt = localStorage.getItem('adm_t') || '';
   let allProducts = [];
@@ -217,34 +217,34 @@
     el.classList.add('active');
     ['orders', 'products', 'groups', 'supply', 'packing'].forEach(i => document.getElementById('tab-' + i).classList.toggle('hidden', i !== n));
   }
+
   async function showApp() {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('adminApp').classList.remove('hidden');
-    // Добавляем универсальное поле фасовок и поиск в форму товара
     const pForm = document.querySelector('#tab-products form');
     if (pForm && !document.getElementById('pVariantsText')) {
       const div = document.createElement('div');
       div.className = 'form-group';
-         div.innerHTML = `
-     <div class="row" style="margin-bottom:8px;">
-       <div style="flex:1;">
-         <label>Тип товара и фасовки</label>
-         <select id="pPackType" class="form-control" onchange="onPackTypeChange()">
-           <option value="weight">Весовой (0.5 кг и 1 кг)</option>
-           <option value="spice">Специи (100 г)</option>
-           <option value="piece">Штучный (1 шт.)</option>
-           <option value="custom">Свой вариант вручную</option>
-         </select>
-       </div>
-       <div style="flex:1;">
-         <label id="pBasePriceLabel">Цена за 1 кг (₽) — авторасчёт</label>
-         <input type="number" id="pBasePrice" class="form-control" placeholder="Например: 700" oninput="autoCalcVariants()">
-       </div>
-     </div>
-     <label>Итоговые фасовки и цены (можно подправить вручную)</label>
-     <input type="text" id="pVariantsText" class="form-control" style="margin-bottom:8px;" placeholder="0.5 кг=350, 1 кг=700">
-     <label>Вес 1 коробки / упаковки у поставщика (кг или шт.)</label>
-     <input type="number" step="0.1" id="pBoxWeight" class="form-control" value="5">`;
+      div.innerHTML = `
+        <div class="row" style="margin-bottom:8px;">
+          <div style="flex:1;">
+            <label>Тип товара и фасовки</label>
+            <select id="pPackType" class="form-control" onchange="onPackTypeChange()">
+              <option value="weight">Весовой (0.5 кг и 1 кг)</option>
+              <option value="spice">Специи (100 г)</option>
+              <option value="piece">Штучный (1 шт.)</option>
+              <option value="custom">Свой вариант вручную</option>
+            </select>
+          </div>
+          <div style="flex:1;">
+            <label id="pBasePriceLabel">Цена за 1 кг (₽) — авторасчёт</label>
+            <input type="number" id="pBasePrice" class="form-control" placeholder="Например: 700" oninput="autoCalcVariants()">
+          </div>
+        </div>
+        <label>Итоговые фасовки и цены (можно подправить вручную)</label>
+        <input type="text" id="pVariantsText" class="form-control" style="margin-bottom:8px;" placeholder="0.5 кг=350, 1 кг=700">
+        <label>Вес 1 коробки / упаковки у поставщика (кг или шт.)</label>
+        <input type="number" step="0.1" id="pBoxWeight" class="form-control" value="5">`;
       pForm.insertBefore(div, document.getElementById('pPhoto').parentElement);
       document.getElementById('pPriceHalf').required = false;
       document.getElementById('pPriceFull').required = false;
@@ -254,16 +254,16 @@
   }
   async function loadAll() {
     const [ords, prods, grps] = await Promise.all([
-           req('rest/v1/orders?order=id.desc&limit=1000'),
+      req('rest/v1/orders?order=id.desc&limit=1000'),
       req('rest/v1/products?order=sort_order.asc,id.asc'),
       req('rest/v1/pickup_groups?order=name.asc')
     ]);
     allProducts = prods || [];
-
-             window.allOrders = ords || [];
+    window.allOrders = ords || [];
     window.allGroups = grps || [];
     window.selectedOrderWeek = window.selectedOrderWeek || 0;
     renderOrdersTab();
+
     const catSel = document.getElementById('pCatSelect');
     if (catSel) {
       const existingCats = Array.from(new Set([
@@ -275,7 +275,7 @@
       onCatSelectChange();
     }
 
-        document.getElementById('productsList').innerHTML = allProducts.map(p => `
+    document.getElementById('productsList').innerHTML = allProducts.map(p => `
       <div class="card" style="${p.is_active ? '' : 'opacity:0.6;'}">
         <div class="row" style="justify-content:space-between; margin-bottom:6px;">
           <div style="display:flex;gap:10px;align-items:center;">
@@ -312,7 +312,7 @@
         </div>
       </div>`).join('');
 
-           window.allGroups = grps || [];
+    window.allGroups = grps || [];
     const weekMeta = [
       { w: 1, title: '⚪ Неделя 1 цикла', bg: '#ffffff', border: '#d1d5db' },
       { w: 2, title: '🔘 Неделя 2 цикла', bg: '#f3f4f6', border: '#9ca3af' },
@@ -324,26 +324,25 @@
       return `
         <div style="margin-top:16px; margin-bottom:6px; font-weight:700; font-size:15px;">${m.title} (${list.length})</div>
         ${list.map(g => `
-                  <div class="card" style="background:${m.bg}; border-left:4px solid ${m.border};">
-          <div class="row" style="justify-content:space-between; gap:8px; flex-wrap:wrap;">
-            <div>
-              <b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
-              <small>Сбор до: <b>${g.collect_until || `-`}</b> | Выдача: <b>${g.delivery_date || `-`}</b> ${g.delivery_time || ``} ${g.address || ``}</small><br>
-              <small style="color:#6b7280;">TG чат: <code>${g.telegram_chat_id || `не задан`}</code> | MAX чат: <code>${g.max_chat_id || `не задан`}</code></small>
+          <div class="card" style="background:${m.bg}; border-left:4px solid ${m.border};">
+            <div class="row" style="justify-content:space-between; gap:8px; flex-wrap:wrap;">
+              <div>
+                <b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
+                <small>Сбор до: <b>${g.collect_until || '-'}</b> | Выдача: <b>${g.delivery_date || '-'}</b> ${g.delivery_time || ''} ${g.address || ''}</small><br>
+                <small style="color:#6b7280;">TG чат: <code>${g.telegram_chat_id || 'не задан'}</code> | MAX чат: <code>${g.max_chat_id || 'не задан'}</code></small>
+              </div>
+              <div class="row" style="gap:6px;">
+                <button class="btn sm" style="background:#059669;" onclick="announceDeliveryToday('${g.id}')">📢 Выдача сегодня</button>
+                <button class="btn sm" style="background:#2563eb;" onclick="editGroup('${g.id}')">✏️ Изм.</button>
+              </div>
             </div>
-            <div class="row" style="gap:6px;">
-              <button class="btn sm" style="background:#059669;" onclick="announceDeliveryToday('${g.id}')">📢 Выдача сегодня</button>
-              <button class="btn sm" style="background:#2563eb;" onclick="editGroup('${g.id}')">✏️ Изм.</button>
-            </div>
-          </div>
-        </div>`).join('') || '<div class="card" style="color:#6b7280;font-size:13px;">В этой неделе пока нет групп</div>'}
+          </div>`).join('') || '<div class="card" style="color:#6b7280;font-size:13px;">В этой неделе пока нет групп</div>'}`;
     }).join('');
 
-        initSupplyFilters(grps);
+    initSupplyFilters(grps);
     renderPackingTab(window.selectedPackingWeek || 1);
   }
-
-   function editProd(id) {
+  function editProd(id) {
     const p = allProducts.find(x => x.id === id);
     if (!p) return;
     document.getElementById('pId').value = p.id;
@@ -362,12 +361,12 @@
     document.getElementById('pDesc').value = p.description || '';
     document.getElementById('pStock').value = p.stock_kg;
     if (document.getElementById('pBasePrice')) document.getElementById('pBasePrice').value = '';
-   document.getElementById('pVariantsText').value = (p.variants || []).map(v => v.size + '=' + v.price).join(', ');
+    document.getElementById('pVariantsText').value = (p.variants || []).map(v => v.size + '=' + v.price).join(', ');
     document.getElementById('pBoxWeight').value = p.box_weight_kg || 5;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-    function editGroup(id) {
+  function editGroup(id) {
     const g = (window.allGroups || []).find(x => x.id === id);
     if (!g) return;
     document.getElementById('gId').value = g.id;
@@ -382,6 +381,7 @@
     document.getElementById('gTg').value = g.telegram_chat_id || '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
   async function announceDeliveryToday(id) {
     const g = (window.allGroups || []).find(x => x.id === id);
     if (!g) return;
@@ -390,7 +390,7 @@
       return;
     }
     const dateStr = [g.delivery_date, g.delivery_time].filter(Boolean).join(' ');
-        if (!confirm('Отправить в чат ЖК «' + g.name + '» объявление:\n\n🚚 Выдача заказов СЕГОДНЯ (' + dateStr + ')?')) return;
+    if (!confirm('Отправить в чат ЖК «' + g.name + '» объявление:\n\n🚚 Выдача заказов СЕГОДНЯ (' + dateStr + ')?')) return;
 
     const relayHost = 'tg-relay.dtrestsov.' + 'workers.dev';
     const res = await fetch('https://' + relayHost + '?announce=delivery', {
@@ -412,7 +412,7 @@
     }
   }
 
-    async function updStk(id) {
+  async function updStk(id) {
     const v = parseFloat(document.getElementById('stk-' + id).value) || 0;
     await req('rest/v1/products?id=eq.' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify({ stock_kg: v }) });
     alert('Остаток обновлен!');
@@ -427,19 +427,9 @@
     loadAll();
   }
   async function markDone(id) {
-       await req('rest/v1/orders?id=eq.' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify({ status: 'completed' }) });
+    await req('rest/v1/orders?id=eq.' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify({ status: 'completed' }) });
     loadAll();
   }
-
-  function parseVariants(str) {
-    return str.split(',').map(part => {
-      const [sz, pr] = part.split('=').map(s => s.trim());
-      const num = parseFloat((sz || '').replace(',', '.')) || 0.5;
-      const w = (sz || '').includes('гр') || (sz || '').includes('мл') ? num / 1000 : num;
-      return { size: sz || '0.5 кг', price: Number(pr) || 0, weight_kg: w };
-    }).filter(x => x.size);
-  }
-
   async function saveProduct(e) {
     e.preventDefault();
     const b = document.getElementById('saveProdBtn'); b.textContent = 'Сохраняем...';
@@ -447,15 +437,15 @@
     const file = document.getElementById('pPhoto').files[0];
     let img = null;
     try {
-          if (file) {
-      const fn = id + '_' + Date.now() + '.' + file.name.split('.').pop();
-      const up = await fetch(PROXY, {
-        method: 'POST',
-        headers: { 'apikey': PUB, 'X-Admin-Token': 'Bearer ' + jwt, 'Content-Type': file.type, 'X-Proxy-Path': 'storage/v1/object/products/' + fn },
-        body: file
-      });
-      if (up.ok) img = SB_URL + '/storage/v1/object/public/products/' + fn;
-    }
+      if (file) {
+        const fn = id + '_' + Date.now() + '.' + file.name.split('.').pop();
+        const up = await fetch(PROXY, {
+          method: 'POST',
+          headers: { 'apikey': PUB, 'X-Admin-Token': 'Bearer ' + jwt, 'Content-Type': file.type, 'X-Proxy-Path': 'storage/v1/object/products/' + fn },
+          body: file
+        });
+        if (up.ok) img = SB_URL + '/storage/v1/object/public/products/' + fn;
+      }
       const vText = document.getElementById('pVariantsText').value.trim();
       const pl = {
         id,
@@ -463,7 +453,7 @@
         name: document.getElementById('pName').value.trim(),
         description: document.getElementById('pDesc').value.trim(),
         stock_kg: parseFloat(document.getElementById('pStock').value) || 0,
-                box_weight_kg: parseFloat(document.getElementById('pBoxWeight').value) || 5,
+        box_weight_kg: parseFloat(document.getElementById('pBoxWeight').value) || 5,
         variants: vText ? parseVariants(vText) : [{ size: '0.5 кг', price: 0, weight_kg: 0.5 }],
         is_active: true
       };
@@ -473,7 +463,7 @@
     } catch (err) { alert(err.message); } finally { b.textContent = 'Сохранить товар'; }
   }
 
-     async function saveGroup(e) {
+  async function saveGroup(e) {
     e.preventDefault();
     const sDate = document.getElementById('gBaseStart').value;
     const eDate = document.getElementById('gBaseEnd').value || sDate;
@@ -503,7 +493,7 @@
 
   let lastSupplyText = '';
 
-   function toggleWeekGroups(w, checked) {
+  function toggleWeekGroups(w, checked) {
     document.querySelectorAll('.sup-grp[data-week="' + w + '"]').forEach(c => c.checked = checked);
   }
 
@@ -520,7 +510,7 @@
       { w: 4, title: '🟢 Неделя 4', bg: '#ecfdf5' }
     ];
 
-       document.getElementById('supGroupsChecks').style.display = 'block';
+    document.getElementById('supGroupsChecks').style.display = 'block';
     document.getElementById('supGroupsChecks').innerHTML = weeks.map(wk => {
       const list = (grps || []).filter(g => (g.week_num || 1) === wk.w);
       if (!list.length) return '';
@@ -538,7 +528,6 @@
         </div>`;
     }).join('');
   }
-
   let lastSupplyRows = [];
   let lastSupplyCheckedGrps = [];
 
@@ -565,12 +554,12 @@
       });
     });
 
-       const rows = allProducts.map(p => {
+    const rows = allProducts.map(p => {
       const ordKg = Number((demand[p.id] || 0).toFixed(3));
       const freeStock = Number(p.stock_kg) || 0;
       const minStock = Number(p.min_stock_kg) || 0;
       const boxKg = Number(p.box_weight_kg) || 5;
-           const avail = freeStock > 0 ? freeStock : 0;
+      const avail = freeStock > 0 ? freeStock : 0;
       const needTotal = ordKg + minStock;
       const deficitKg = needTotal > avail ? Number((needTotal - avail).toFixed(3)) : 0;
       const boxesToBuy = deficitKg > 0 ? Math.ceil(deficitKg / boxKg) : 0;
@@ -588,7 +577,7 @@
 
     lastSupplyText = `Заказ поставщику (${from} — ${to}):\n` + rows
       .filter(r => r.boxesToBuy > 0)
-            .map(r => `• ${r.p.name}: ${r.boxesToBuy} кор. (${r.buyKg} кг)`)
+      .map(r => `• ${r.p.name}: ${r.boxesToBuy} кор. (${r.buyKg} кг)`)
       .join('\n');
 
     const buyRows = rows.filter(r => r.boxesToBuy > 0);
@@ -653,14 +642,13 @@
           p_group_ids: lastSupplyCheckedGrps
         })
       });
-      alert(`✅ Склад обновлён!` + (res && res.adjusted_orders ? ` Пересчитано заказов клиентов: ${res.adjusted_orders}` : ''));
+      alert('✅ Склад обновлён!' + (res && res.adjusted_orders ? ` Пересчитано заказов клиентов: ${res.adjusted_orders}` : ''));
       await loadAll();
       await calcSupply();
     } catch (err) {
       alert(err.message);
     }
   }
-
 
   function copySupply() {
     if (!lastSupplyText) return alert('Нет позиций для заказа поставщику (всего хватает на складе)');
@@ -673,14 +661,14 @@
     printOrders(ids);
   }
 
-   function printOrders(ids) {
-     const getGrpName = (gid) => {
-   const g = (window.allGroups || []).find(x => x.id === gid);
-   return g ? g.name : (gid || '');
- };
- const list = (window.allOrders || [])
-   .filter(o => ids.includes(o.id))
-   .sort((a, b) => getGrpName(a.group_id).localeCompare(getGrpName(b.group_id), 'ru') || a.id - b.id);
+  function printOrders(ids) {
+    const getGrpName = (gid) => {
+      const g = (window.allGroups || []).find(x => x.id === gid);
+      return g ? g.name : (gid || '');
+    };
+    const list = (window.allOrders || [])
+      .filter(o => ids.includes(o.id))
+      .sort((a, b) => getGrpName(a.group_id).localeCompare(getGrpName(b.group_id), 'ru') || a.id - b.id);
     if (!list.length) return;
     const win = window.open('', '_blank', 'width=800,height=900');
 
@@ -785,7 +773,7 @@
     renderOrdersTab();
   }
 
-   function renderOrdersTab() {
+  function renderOrdersTab() {
     const w = window.selectedOrderWeek || 0;
     const getGrpName = (gid) => {
       const g = (window.allGroups || []).find(x => x.id === gid);
@@ -793,7 +781,7 @@
     };
 
     const countNew = (wk) => (window.allOrders || []).filter(o => {
-        if (o.status !== 'new' && o.status !== 'cancel_requested') return false;
+      if (o.status !== 'new' && o.status !== 'cancel_requested') return false;
       if (wk === 0) return true;
       const g = (window.allGroups || []).find(x => x.id === o.group_id);
       return (g ? (g.week_num || 1) : 1) === wk;
@@ -805,7 +793,7 @@
         const g = (window.allGroups || []).find(x => x.id === o.group_id);
         return (g ? (g.week_num || 1) : 1) === w;
       })
-         .sort((a, b) => (b.status === 'cancel_requested' ? 1 : 0) - (a.status === 'cancel_requested' ? 1 : 0) || getGrpName(a.group_id).localeCompare(getGrpName(b.group_id), 'ru') || a.id - b.id);
+      .sort((a, b) => (b.status === 'cancel_requested' ? 1 : 0) - (a.status === 'cancel_requested' ? 1 : 0) || getGrpName(a.group_id).localeCompare(getGrpName(b.group_id), 'ru') || a.id - b.id);
 
     const btnStyle = (wk) => wk === w
       ? 'background:#16a34a; box-shadow:0 0 0 2px #bbf7d0;'
@@ -828,11 +816,11 @@
       const dt = new Date(o.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
       const numLabel = o.order_number.startsWith('№') ? o.order_number : '№' + o.id;
       const itemsHtml = (o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} = ${i.price * i.qty} ₽`).join('<br>');
-           const isCancelReq = o.status === 'cancel_requested';
-      const doneBtn = o.status === `new` ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : ``;
+      const isCancelReq = o.status === 'cancel_requested';
+      const doneBtn = o.status === 'new' ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : '';
       const badgeHtml = isCancelReq
         ? '<span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Запрос отмены</span>'
-        : `<span class="badge ${o.status === 'new' ? 'new` : ``}">${o.status === `new` ? `Новый' : 'Выдан'}</span>`;
+        : `<span class="badge ${o.status === 'new' ? 'new' : ''}">${o.status === 'new' ? 'Новый' : 'Выдан'}</span>`;
       const cancelBtns = isCancelReq
         ? `<button class="btn sm" style="background:#dc2626;" onclick="cancelOrder(${o.id}, '${numLabel}')">✅ Подтвердить отмену</button>
            <button class="btn sm gray" onclick="rejectCancel(${o.id})">↩️ Оставить</button>`
@@ -876,24 +864,25 @@
 
     document.getElementById('ordersList').innerHTML = headerHtml + (cardsHtml || '<div class="card" style="color:#6b7280; text-align:center;">В выбранной неделе заказов пока нет</div>');
   }
-async function markWeekDone(w) {
-  const targets = (window.allOrders || []).filter(o => {
-    if (o.status !== 'new') return false;
-    if (w === 0) return true;
-    const g = (window.allGroups || []).find(x => x.id === o.group_id);
-    return (g ? (g.week_num || 1) : 1) === w;
-  });
-  if (!targets.length) return;
-  const label = w === 0 ? 'всех недель' : `Недели ${w}`;
-  if (!confirm(`Отметить как ВЫДАННЫЕ сразу ${targets.length} заказов (${label})?`)) return;
+  async function markWeekDone(w) {
+    const targets = (window.allOrders || []).filter(o => {
+      if (o.status !== 'new') return false;
+      if (w === 0) return true;
+      const g = (window.allGroups || []).find(x => x.id === o.group_id);
+      return (g ? (g.week_num || 1) : 1) === w;
+    });
+    if (!targets.length) return;
+    const label = w === 0 ? 'всех недель' : `Недели ${w}`;
+    if (!confirm(`Отметить как ВЫДАННЫЕ сразу ${targets.length} заказов (${label})?`)) return;
 
-  const ids = targets.map(o => o.id).join(',');
-  await req(`rest/v1/orders?id=in.(${ids})`, {
-    method: 'PATCH',
-    body: JSON.stringify({ status: 'completed' })
-  });
-  loadAll();
-}
+    const ids = targets.map(o => o.id).join(',');
+    await req(`rest/v1/orders?id=in.(${ids})`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'completed' })
+    });
+    loadAll();
+  }
+
   window.selectedPackingWeek = 1;
   let lastPackingHtml = '';
   let lastPackingTitle = '';
@@ -912,7 +901,6 @@ async function markWeekDone(w) {
       return;
     }
 
-    // Группируем по ID товара и фасовке (size)
     const map = {};
     orders.forEach(o => {
       (o.items || []).forEach(it => {
@@ -932,13 +920,12 @@ async function markWeekDone(w) {
       });
     });
 
-       const items = Object.values(map).sort((a, b) => {
+    const items = Object.values(map).sort((a, b) => {
       const idA = String(a.id).padStart(6, '0');
       const idB = String(b.id).padStart(6, '0');
       return idA.localeCompare(idB) || a.weight_kg - b.weight_kg;
     });
 
-    // Группируем по категориям для удобной фасовки
     const byCat = {};
     items.forEach(it => {
       if (!byCat[it.category]) byCat[it.category] = [];
@@ -970,13 +957,12 @@ async function markWeekDone(w) {
             <label style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px dashed #f3f4f6; font-weight:normal; color:#111827; cursor:pointer;">
               <span style="display:flex; align-items:center; gap:8px;">
                 <input type="checkbox" style="width:18px; height:18px;">
-                                <span><small style="color:#6b7280; font-family:monospace;">[${x.id}]</small> <b>${x.name}</b> — <span style="background:#fef3c7; padding:2px 6px; border-radius:6px; font-weight:700;">${x.size}</span></span>
+                <span><small style="color:#6b7280; font-family:monospace;">[${x.id}]</small> <b>${x.name}</b> — <span style="background:#fef3c7; padding:2px 6px; border-radius:6px; font-weight:700;">${x.size}</span></span>
               </span>
               <span style="font-size:15px; font-weight:800; color:#111827;">${x.qty} шт. <small style="font-weight:400; color:#6b7280;">(${Number((x.qty * x.weight_kg).toFixed(3))} кг)</small></span>
             </label>`).join('')}
         </div>`).join('');
   }
-
   function printPackingList() {
     if (!lastPackingHtml) return alert('Нет позиций для печати в выбранной неделе');
     const win = window.open('', '_blank', 'width=850,height=900');
@@ -994,7 +980,8 @@ async function markWeekDone(w) {
       <script>window.onload = function(){ window.print(); };<\/script></body></html>`);
     win.document.close();
   }
-    function parseVariants(str) {
+
+  function parseVariants(str) {
     return str.split(',').map(part => {
       const [sz, pr] = part.split('=').map(s => s.trim());
       const num = parseFloat((sz || '').replace(',', '.')) || 0.5;
@@ -1060,25 +1047,26 @@ async function markWeekDone(w) {
     alert('✅ Цены обновлены!');
     loadAll();
   }
-async function updBox(id) {
-  const bw = parseFloat(document.getElementById('box-' + id).value) || 5;
-  await req(`rest/v1/products?id=eq.${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ box_weight_kg: bw })
-  });
-  alert('✅ Вес коробки обновлён!');
-  loadAll();
-}
+  async function updBox(id) {
+    const bw = parseFloat(document.getElementById('box-' + id).value) || 5;
+    await req(`rest/v1/products?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ box_weight_kg: bw })
+    });
+    alert('✅ Вес коробки обновлён!');
+    loadAll();
+  }
 
-async function updMinStk(id) {
-  const ms = parseFloat(document.getElementById('min-' + id).value) || 0;
-  await req(`rest/v1/products?id=eq.${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ min_stock_kg: ms })
-  });
-  alert('✅ Минимальный остаток обновлён!');
-  loadAll();
-}
+  async function updMinStk(id) {
+    const ms = parseFloat(document.getElementById('min-' + id).value) || 0;
+    await req(`rest/v1/products?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ min_stock_kg: ms })
+    });
+    alert('✅ Минимальный остаток обновлён!');
+    loadAll();
+  }
+
   function exportSupplyExcel() {
     const buyRows = (lastSupplyRows || []).filter(r => r.boxesToBuy > 0);
     if (!buyRows.length) return alert('Сначала выберите неделю и нажмите «Рассчитать закупку»');
@@ -1122,6 +1110,7 @@ async function updMinStk(id) {
     a.click();
     URL.revokeObjectURL(url);
   }
+
   async function rejectCancel(id) {
     await req(`rest/v1/orders?id=eq.${id}`, {
       method: 'PATCH',
