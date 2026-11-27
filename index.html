@@ -431,11 +431,13 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
     const list = document.getElementById('myOrdersList');
     list.innerHTML = 'Загружаем заказы...';
     try {
-      const filter = currentUser.id
-        ? `or=(user_id.eq.${currentUser.id}${currentUser.phone ? `,customer_phone.eq.${encodeURIComponent(currentUser.phone)}` : ''})`
-        : `customer_phone=eq.${encodeURIComponent(currentUser.phone)}`;
-
-      const orders = await sbFetch(`orders?${filter}&order=created_at.desc&limit=20`);
+           const orders = await sbFetch('rpc/get_my_orders', {
+        method: 'POST',
+        body: JSON.stringify({
+          p_user_id: currentUser.id || null,
+          p_phone: currentUser.phone || null
+        })
+      });
       cachedMyOrders = orders || [];
 
            setCabTab(currentCabTab);
