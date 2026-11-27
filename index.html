@@ -385,7 +385,7 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
       badge.classList.toggle('hidden', cnt === 0);
     }
     if (lbl) lbl.textContent = cnt > 0 ? `${sum} ₽` : 'Корзина';
-
+  }
     async function openAuth() {
     document.getElementById('authModal').classList.add('open');
     const cab = document.getElementById('clientCabinet');
