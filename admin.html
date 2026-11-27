@@ -760,7 +760,7 @@
     };
 
     const countNew = (wk) => (window.allOrders || []).filter(o => {
-      if (o.status !== 'new') return false;
+        if (o.status !== 'new' && o.status !== 'cancel_requested') return false;
       if (wk === 0) return true;
       const g = (window.allGroups || []).find(x => x.id === o.group_id);
       return (g ? (g.week_num || 1) : 1) === wk;
@@ -772,7 +772,7 @@
         const g = (window.allGroups || []).find(x => x.id === o.group_id);
         return (g ? (g.week_num || 1) : 1) === w;
       })
-      .sort((a, b) => getGrpName(a.group_id).localeCompare(getGrpName(b.group_id), 'ru') || a.id - b.id);
+         .sort((a, b) => (b.status === 'cancel_requested' ? 1 : 0) - (a.status === 'cancel_requested' ? 1 : 0) || getGrpName(a.group_id).localeCompare(getGrpName(b.group_id), 'ru') || a.id - b.id);
 
     const btnStyle = (wk) => wk === w
       ? 'background:#16a34a; box-shadow:0 0 0 2px #bbf7d0;'
@@ -795,21 +795,31 @@
       const dt = new Date(o.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
       const numLabel = o.order_number.startsWith('№') ? o.order_number : '№' + o.id;
       const itemsHtml = (o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} = ${i.price * i.qty} ₽`).join('<br>');
+           const isCancelReq = o.status === 'cancel_requested';
       const doneBtn = o.status === 'new' ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : '';
+      const badgeHtml = isCancelReq
+        ? '<span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Запрос отмены</span>'
+        : `<span class="badge ${o.status === 'new' ? 'new' : ''}">${o.status === 'new' ? 'Новый' : 'Выдан'}</span>`;
+      const cancelBtns = isCancelReq
+        ? `<button class="btn sm" style="background:#dc2626;" onclick="cancelOrder(${o.id}, '${numLabel}')">✅ Подтвердить отмену</button>
+           <button class="btn sm gray" onclick="rejectCancel(${o.id})">↩️ Оставить</button>`
+        : `<button class="btn sm" style="background:#dc2626;" onclick="cancelOrder(${o.id}, '${numLabel}')">🗑️</button>`;
+      const commentHtml = o.comment ? `<div style="font-size:12px; color:#b91c1c; background:#fef2f2; padding:6px 8px; border-radius:6px; margin-bottom:6px;">💬 ${o.comment}</div>` : '';
       return grpBanner + `
-      <div class="card">
+      <div class="card" style="${isCancelReq ? 'border:2px solid #ef4444;' : ''}">
         <div class="row" style="justify-content:space-between;margin-bottom:6px;">
           <b>Заказ ${numLabel} <span style="font-weight:400; color:#6b7280; font-size:13px;">от ${dt}</span></b>
-          <span class="badge ${o.status === 'new' ? 'new' : ''}">${o.status === 'new' ? 'Новый' : 'Выдан'}</span>
+          ${badgeHtml}
         </div>
         <div style="font-size:13px;margin-bottom:6px;">📍 <b>${grpTitle}</b> <small style="color:#6b7280;">(Нед. ${wk})</small> | 👤 ${o.customer_name} (${o.customer_phone})</div>
+        ${commentHtml}
         <div style="font-size:12px;background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:8px;">${itemsHtml}</div>
         <div class="row" style="justify-content:space-between;">
           <b>Итого: ${o.total_amount} ₽ (${o.payment_method})</b>
           <div class="row">
             <button class="btn sm gray" onclick="printOrders([${o.id}])">🖨️ На пакет</button>
             ${doneBtn}
-            <button class="btn sm" style="background:#dc2626;" onclick="cancelOrder(${o.id}, '${numLabel}')">🗑️</button>
+            ${cancelBtns}
           </div>
         </div>
       </div>`;
@@ -1078,6 +1088,13 @@ async function updMinStk(id) {
     a.download = `Заявка_поставщику_${dt}.xls`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+  async function rejectCancel(id) {
+    await req(`rest/v1/orders?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'new' })
+    });
+    loadAll();
   }
 
   if (jwt) showApp();
