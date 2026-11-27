@@ -191,8 +191,6 @@
     <div id="clientLoginForm">
       <button class="auth-btn max" onclick="loginViaMessenger('MAX')">💬 Войти через MAX</button>
       <button class="auth-btn tg" onclick="loginViaMessenger('Telegram')">✈️ Войти через Telegram</button>
-      <button class="auth-btn vk" onclick="loginViaOAuth('vk')">🔵 Войти с VK ID</button>
-      <button class="auth-btn yandex" onclick="loginViaOAuth('yandex')">🔴 Войти с Яндекс ID</button>
       <div class="form-group"><input type="tel" class="form-control" id="phoneLoginInput" placeholder="+7 (999) 000-00-00"></div>
       <div class="form-group"><input type="text" class="form-control" id="nameLoginInput" placeholder="Ваше имя"></div>
       <button class="primary-btn" onclick="loginViaPhone()">Продолжить</button>
@@ -595,7 +593,6 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
     closeModal('authModal');
   }
   function loginViaMessenger(t) { alert(`Откройте витрину через бота в ${t} для входа в 1 клик.`); }
-  function loginViaOAuth(p) { window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=${p}&redirect_to=${encodeURIComponent(window.location.href)}`; }
 
   async function submitOrder(e) {
     e.preventDefault();
