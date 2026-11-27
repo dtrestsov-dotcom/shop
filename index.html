@@ -642,6 +642,32 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
   if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
     loginViaMessenger('tg');
   }
+  (function initPhoneMask() {
+    const formatRuPhone = (raw) => {
+      let digits = raw.replace(/\D/g, '');
+      if (!digits) return '';
+      if (digits[0] === '8' || digits[0] === '7') digits = digits.slice(1);
+      digits = digits.slice(0, 10);
+      let res = '+7';
+      if (digits.length > 0) res += ' (' + digits.slice(0, 3);
+      if (digits.length >= 3) res += ') ' + digits.slice(3, 6);
+      if (digits.length >= 6) res += '-' + digits.slice(6, 8);
+      if (digits.length >= 8) res += '-' + digits.slice(8, 10);
+      return res;
+    };
+
+    document.querySelectorAll('input[type="tel"], #authPhone, #clientPhone').forEach((inp) => {
+      inp.addEventListener('focus', () => {
+        if (!inp.value.trim()) inp.value = '+7 (';
+      });
+      inp.addEventListener('blur', () => {
+        if (inp.value === '+7 (' || inp.value === '+7') inp.value = '';
+      });
+      inp.addEventListener('input', () => {
+        inp.value = formatRuPhone(inp.value);
+      });
+    });
+  })();
 
 </script>
 </body>
