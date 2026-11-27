@@ -427,7 +427,7 @@
     loadAll();
   }
   async function markDone(id) {
-    await req(`rest/v1/orders?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'completed' }) });
+       await req('rest/v1/orders?id=eq.' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify({ status: 'completed' }) });
     loadAll();
   }
 
@@ -447,15 +447,15 @@
     const file = document.getElementById('pPhoto').files[0];
     let img = null;
     try {
-      if (file) {
-        const fn = `${id}_${Date.now()}.${file.name.split('.').pop()}`;
-        const up = await fetch(PROXY, {
-          method: 'POST',
-          headers: { 'apikey': PUB, 'X-Admin-Token': 'Bearer ' + jwt, 'Content-Type': file.type, 'X-Proxy-Path': `storage/v1/object/products/${fn}` },
-          body: file
-        });
-        if (up.ok) img = `${SB_URL}/storage/v1/object/public/products/${fn}`;
-      }
+          if (file) {
+      const fn = id + '_' + Date.now() + '.' + file.name.split('.').pop();
+      const up = await fetch(PROXY, {
+        method: 'POST',
+        headers: { 'apikey': PUB, 'X-Admin-Token': 'Bearer ' + jwt, 'Content-Type': file.type, 'X-Proxy-Path': 'storage/v1/object/products/' + fn },
+        body: file
+      });
+      if (up.ok) img = SB_URL + '/storage/v1/object/public/products/' + fn;
+    }
       const vText = document.getElementById('pVariantsText').value.trim();
       const pl = {
         id,
