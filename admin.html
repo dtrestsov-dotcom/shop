@@ -328,8 +328,8 @@
           <div class="row" style="justify-content:space-between; gap:8px; flex-wrap:wrap;">
             <div>
               <b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
-              <small>Сбор до: <b>${g.collect_until || '-`}</b> | Выдача: <b>${g.delivery_date || `-`}</b> ${g.delivery_time || ``} ${g.address || `'}</small><br>
-              <small style="color:#6b7280;">TG чат: <code>${g.telegram_chat_id || 'не задан`}</code> | MAX чат: <code>${g.max_chat_id || `не задан'}</code></small>
+              <small>Сбор до: <b>${g.collect_until || `-`}</b> | Выдача: <b>${g.delivery_date || `-`}</b> ${g.delivery_time || ``} ${g.address || ``}</small><br>
+              <small style="color:#6b7280;">TG чат: <code>${g.telegram_chat_id || `не задан`}</code> | MAX чат: <code>${g.max_chat_id || `не задан`}</code></small>
             </div>
             <div class="row" style="gap:6px;">
               <button class="btn sm" style="background:#059669;" onclick="announceDeliveryToday(`${g.id}`)">📢 Выдача сегодня</button>
@@ -829,10 +829,10 @@
       const numLabel = o.order_number.startsWith('№') ? o.order_number : '№' + o.id;
       const itemsHtml = (o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} = ${i.price * i.qty} ₽`).join('<br>');
            const isCancelReq = o.status === 'cancel_requested';
-      const doneBtn = o.status === 'new` ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : `';
+      const doneBtn = o.status === `new` ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : ``;
       const badgeHtml = isCancelReq
         ? '<span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Запрос отмены</span>'
-        : `<span class="badge ${o.status === 'new' ? 'new' : '`}">${o.status === `new' ? 'Новый' : 'Выдан'}</span>`;
+        : `<span class="badge ${o.status === 'new' ? 'new' : ``}">${o.status === `new` ? 'Новый' : 'Выдан'}</span>`;
       const cancelBtns = isCancelReq
         ? `<button class="btn sm" style="background:#dc2626;" onclick="cancelOrder(${o.id}, `${numLabel}`)">✅ Подтвердить отмену</button>
            <button class="btn sm gray" onclick="rejectCancel(${o.id})">↩️ Оставить</button>`
