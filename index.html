@@ -180,7 +180,12 @@
           <button class="pill-btn" style="background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.4); color:#f87171;" onclick="clientLogout()">Выйти</button>
         </div>
       </div>
-      <h4 style="font-size:15px; margin-bottom:10px; color:#fff;">📦 Мои заказы</h4>
+           <div style="display:flex; gap:6px; margin-bottom:12px;">
+        <button id="cabTabActive" class="pill-btn" style="flex:1; background:rgba(16,185,129,0.2); border-color:var(--accent); color:#34d399;" onclick="setCabTab('active')">⏳ В сборе</button>
+        <button id="cabTabDone" class="pill-btn" style="flex:1;" onclick="setCabTab('done')">✅ Полученные</button>
+        <button id="cabTabFav" class="pill-btn" style="flex:1;" onclick="setCabTab('fav')">❤️ Избранное</button>
+      </div>
+
       <div id="myOrdersList" style="font-size:13px; color:var(--muted);">Загружаем историю заказов...</div>
     </div>
     <div id="clientLoginForm">
