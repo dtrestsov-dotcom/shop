@@ -529,7 +529,7 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
     }).join('');
   }
 
-    } catch (err) {
+   catch (err) {
       list.innerHTML = `<p style="color:#dc2626;">Ошибка загрузки: ${err.message}</p>`;
     }
   }
