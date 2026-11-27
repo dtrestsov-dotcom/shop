@@ -285,9 +285,9 @@
             </div>
           </div>
           <div class="row">
-            <button class="btn sm" style="background:#2563eb;" onclick="editProd('${p.id}')">✏️ Изм.</button>
-            <button class="btn sm gray" onclick="togProd('${p.id}',${!p.is_active})">${p.is_active ? 'Скрыть' : 'Показать'}</button>
-            <button class="btn sm" style="background:#dc2626;" onclick="delProd('${p.id}')">🗑️</button>
+            <button class="btn sm" style="background:#2563eb;" onclick="editProd(`${p.id}`)">✏️ Изм.</button>
+            <button class="btn sm gray" onclick="togProd(`${p.id}`,${!p.is_active})">${p.is_active ? 'Скрыть' : 'Показать'}</button>
+            <button class="btn sm" style="background:#dc2626;" onclick="delProd(`${p.id}`)">🗑️</button>
           </div>
         </div>
         <div class="row" style="justify-content:space-between; background:#f9fafb; padding:6px 8px; border-radius:8px;">
@@ -296,18 +296,18 @@
               <span style="font-size:12px;">${v.size}:</span>
               <input type="number" id="pr-${p.id}-${idx}" value="${v.price}" style="width:62px;padding:4px;border:1px solid #ccc;border-radius:6px;"> ₽
             `).join('')}
-            <button class="btn sm" style="background:#059669;" onclick="updPrices('${p.id}')">₽ ✓</button>
+            <button class="btn sm" style="background:#059669;" onclick="updPrices(`${p.id}`)">₽ ✓</button>
           </div>
                    <div class="row" style="gap:6px;">
             <span style="font-size:12px;">Кор.:</span>
             <input type="number" step="0.1" id="box-${p.id}" value="${p.box_weight_kg || 5}" style="width:50px;padding:4px;border:1px solid #ccc;border-radius:6px;">
-            <button class="btn sm" style="background:#7c3aed;" onclick="updBox('${p.id}')">📦 ✓</button>
+            <button class="btn sm" style="background:#7c3aed;" onclick="updBox(`${p.id}`)">📦 ✓</button>
             <span style="font-size:12px; margin-left:4px;">Мин.:</span>
             <input type="number" step="0.1" id="min-${p.id}" value="${p.min_stock_kg || 0}" style="width:50px;padding:4px;border:1px solid #ccc;border-radius:6px;">
-            <button class="btn sm" style="background:#d97706;" onclick="updMinStk('${p.id}')">Мин ✓</button>
+            <button class="btn sm" style="background:#d97706;" onclick="updMinStk(`${p.id}`)">Мин ✓</button>
             <span style="font-size:12px; margin-left:4px;">Ост.:</span>
             <input type="number" step="0.1" id="stk-${p.id}" value="${p.stock_kg}" style="width:56px;padding:4px;border:1px solid #ccc;border-radius:6px;">
-            <button class="btn sm" onclick="updStk('${p.id}')">Кг ✓</button>
+            <button class="btn sm" onclick="updStk(`${p.id}`)">Кг ✓</button>
           </div>
         </div>
       </div>`).join('');
@@ -328,12 +328,12 @@
           <div class="row" style="justify-content:space-between; gap:8px; flex-wrap:wrap;">
             <div>
               <b>${g.name}</b> (<code>?group=${g.id}</code>)<br>
-              <small>Сбор до: <b>${g.collect_until || '-'}</b> | Выдача: <b>${g.delivery_date || '-'}</b> ${g.delivery_time || ''} ${g.address || ''}</small><br>
-              <small style="color:#6b7280;">TG чат: <code>${g.telegram_chat_id || 'не задан'}</code> | MAX чат: <code>${g.max_chat_id || 'не задан'}</code></small>
+              <small>Сбор до: <b>${g.collect_until || '-`}</b> | Выдача: <b>${g.delivery_date || `-`}</b> ${g.delivery_time || ``} ${g.address || `'}</small><br>
+              <small style="color:#6b7280;">TG чат: <code>${g.telegram_chat_id || 'не задан`}</code> | MAX чат: <code>${g.max_chat_id || `не задан'}</code></small>
             </div>
             <div class="row" style="gap:6px;">
-              <button class="btn sm" style="background:#059669;" onclick="announceDeliveryToday('${g.id}')">📢 Выдача сегодня</button>
-              <button class="btn sm" style="background:#2563eb;" onclick="editGroup('${g.id}')">✏️ Изм.</button>
+              <button class="btn sm" style="background:#059669;" onclick="announceDeliveryToday(`${g.id}`)">📢 Выдача сегодня</button>
+              <button class="btn sm" style="background:#2563eb;" onclick="editGroup(`${g.id}`)">✏️ Изм.</button>
             </div>
           </div>
         </div>`).join('') || '<div class="card" style="color:#6b7280;font-size:13px;">В этой неделе пока нет групп</div>'}
@@ -829,14 +829,14 @@
       const numLabel = o.order_number.startsWith('№') ? o.order_number : '№' + o.id;
       const itemsHtml = (o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} = ${i.price * i.qty} ₽`).join('<br>');
            const isCancelReq = o.status === 'cancel_requested';
-      const doneBtn = o.status === 'new' ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : '';
+      const doneBtn = o.status === 'new` ? `<button class="btn sm" onclick="markDone(${o.id})">Выдан ✓</button>` : `';
       const badgeHtml = isCancelReq
         ? '<span class="badge" style="background:#fee2e2; color:#b91c1c;">⚠️ Запрос отмены</span>'
-        : `<span class="badge ${o.status === 'new' ? 'new' : ''}">${o.status === 'new' ? 'Новый' : 'Выдан'}</span>`;
+        : `<span class="badge ${o.status === 'new' ? 'new' : '`}">${o.status === `new' ? 'Новый' : 'Выдан'}</span>`;
       const cancelBtns = isCancelReq
-        ? `<button class="btn sm" style="background:#dc2626;" onclick="cancelOrder(${o.id}, '${numLabel}')">✅ Подтвердить отмену</button>
+        ? `<button class="btn sm" style="background:#dc2626;" onclick="cancelOrder(${o.id}, `${numLabel}`)">✅ Подтвердить отмену</button>
            <button class="btn sm gray" onclick="rejectCancel(${o.id})">↩️ Оставить</button>`
-        : `<button class="btn sm" style="background:#dc2626;" onclick="cancelOrder(${o.id}, '${numLabel}')">🗑️</button>`;
+        : `<button class="btn sm" style="background:#dc2626;" onclick="cancelOrder(${o.id}, `${numLabel}`)">🗑️</button>`;
       const commentHtml = o.comment ? `<div style="font-size:12px; color:#b91c1c; background:#fef2f2; padding:6px 8px; border-radius:6px; margin-bottom:6px;">💬 ${o.comment}</div>` : '';
       return grpBanner + `
       <div class="card" style="${isCancelReq ? 'border:2px solid #ef4444;' : ''}">
