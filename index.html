@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#2e7d32">
   <link rel="manifest" href="manifest.json">
   <title>Орехи и Сухофрукты</title>
+  <script src="https://telegram.org"></script>
   <style>
      :root {
     --bg: #0f1115;
@@ -592,7 +593,22 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
     await syncProfile({ phone, full_name: document.getElementById('nameLoginInput').value.trim() });
     closeModal('authModal');
   }
-  function loginViaMessenger(t) { alert(`Откройте витрину через бота в ${t} для входа в 1 клик.`); }
+   async function loginViaMessenger(t) {
+    if (t === 'tg' && window.Telegram?.WebApp?.initDataUnsafe?.user) {
+      const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+      const fullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') || tgUser.username || 'Клиент Telegram';
+      await syncProfile({
+        telegram_id: String(tgUser.id),
+        full_name: fullName
+      });
+      closeModal('authModal');
+      return;
+    }
+    alert(`Откройте витрину через бота в ${t === 'tg' ? 'Telegram' : 'MAX'} для входа в 1 клик, либо введите телефон ниже.`);
+  }
+
 
   async function submitOrder(e) {
     e.preventDefault();
@@ -611,6 +627,10 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
     } catch (err) { alert('Ошибка: ' + err.message); } finally { btn.disabled = false; btn.textContent = 'Оформить заказ'; }
   }
   init();
+  if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+    loginViaMessenger('tg');
+  }
+
 </script>
 </body>
 </html>
