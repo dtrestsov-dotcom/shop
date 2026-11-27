@@ -529,8 +529,6 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
     }).join('');
   }
 
-  }
-
   function repeatOrder(idx) {
     const o = cachedMyOrders[idx];
     if (!o || !o.items) return;
