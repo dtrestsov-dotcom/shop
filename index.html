@@ -237,20 +237,55 @@
   let products = [], groups = [], activeCategory = 'Все', selectedVariants = {}, cart = [];
   let currentUser = JSON.parse(localStorage.getItem('nut_user') || 'null');
 
-    async function syncProfile(userData) {
+      async function syncProfile(userData) {
     const col = userData.telegram_id ? 'telegram_id' : userData.max_id ? 'max_id' : userData.vk_id ? 'vk_id' : 'phone';
-    if (!userData[col]) return;
+    const val = userData[col];
+    if (!val) return;
     try {
-      const ex = await sbFetch(`profiles?${col}=eq.${encodeURIComponent(userData[col])}&select=*`);
-      let p = Array.isArray(ex) ? ex[0] : ex;
+      let p = null;
+      const ex = await sbFetch(`profiles?${col}=eq.${encodeURIComponent(val)}&select=*`);
+      p = Array.isArray(ex) ? ex : ex;
+
+      const phoneToFind = userData.phone || (p && p.phone) || (currentUser && currentUser.phone);
+      let phoneProf = null;
+      if (phoneToFind) {
+        const clean10 = String(phoneToFind).replace(/\D/g, '').slice(-10);
+        if (clean10.length >= 10) {
+          const byPh = await sbFetch(`profiles?phone=ilike.*${clean10}*&select=*`);
+          const list = Array.isArray(byPh) ? byPh : (byPh ? [byPh] : []);
+          phoneProf = list.find(x => !p || x.id !== p.id) || null;
+        }
+      }
+
+      if (!p && phoneProf) p = phoneProf;
+
       if (!p) {
         const cr = await sbFetch('profiles', {
           method: 'POST',
           headers: { 'Prefer': 'return=representation' },
           body: JSON.stringify(userData)
         });
-        p = Array.isArray(cr) ? cr[0] : cr;
+        p = Array.isArray(cr) ? cr : cr;
+      } else {
+        if (phoneProf && phoneProf.id !== p.id) {
+          await sbFetch(`profiles?id=eq.${phoneProf.id}`, { method: 'DELETE' }).catch(() => {});
+        }
+        const merged = {
+          telegram_id: userData.telegram_id || p.telegram_id || (phoneProf && phoneProf.telegram_id) || null,
+          max_id: userData.max_id || p.max_id || (phoneProf && phoneProf.max_id) || null,
+          phone: userData.phone || p.phone || (phoneProf && phoneProf.phone) || null,
+          full_name: (userData.phone && userData.full_name)
+            ? userData.full_name
+            : (p.full_name || (phoneProf && phoneProf.full_name) || userData.full_name || null)
+        };
+        const upd = await sbFetch(`profiles?id=eq.${p.id}`, {
+          method: 'PATCH',
+          headers: { 'Prefer': 'return=representation' },
+          body: JSON.stringify(merged)
+        });
+        p = (Array.isArray(upd) ? upd : upd) || { ...p, ...merged };
       }
+
       if (p) {
         currentUser = p;
         localStorage.setItem('nut_user', JSON.stringify(p));
@@ -258,7 +293,62 @@
       }
     } catch (e) { console.warn(e); }
   }
+  async function syncProfile(userData) {
+    const col = userData.telegram_id ? 'telegram_id' : userData.max_id ? 'max_id' : userData.vk_id ? 'vk_id' : 'phone';
+    const val = userData[col];
+    if (!val) return;
+    try {
+      let p = null;
+      const ex = await sbFetch(`profiles?${col}=eq.${encodeURIComponent(val)}&select=*`);
+      p = Array.isArray(ex) ? ex : ex;
 
+      const phoneToFind = userData.phone || (p && p.phone) || (currentUser && currentUser.phone);
+      let phoneProf = null;
+      if (phoneToFind) {
+        const clean10 = String(phoneToFind).replace(/\D/g, '').slice(-10);
+        if (clean10.length >= 10) {
+          const byPh = await sbFetch(`profiles?phone=ilike.*${clean10}*&select=*`);
+          const list = Array.isArray(byPh) ? byPh : (byPh ? [byPh] : []);
+          phoneProf = list.find(x => !p || x.id !== p.id) || null;
+        }
+      }
+
+      if (!p && phoneProf) p = phoneProf;
+
+      if (!p) {
+        const cr = await sbFetch('profiles', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=representation' },
+          body: JSON.stringify(userData)
+        });
+        p = Array.isArray(cr) ? cr : cr;
+      } else {
+        if (phoneProf && phoneProf.id !== p.id) {
+          await sbFetch(`profiles?id=eq.${phoneProf.id}`, { method: 'DELETE' }).catch(() => {});
+        }
+        const merged = {
+          telegram_id: userData.telegram_id || p.telegram_id || (phoneProf && phoneProf.telegram_id) || null,
+          max_id: userData.max_id || p.max_id || (phoneProf && phoneProf.max_id) || null,
+          phone: userData.phone || p.phone || (phoneProf && phoneProf.phone) || null,
+          full_name: (userData.phone && userData.full_name)
+            ? userData.full_name
+            : (p.full_name || (phoneProf && phoneProf.full_name) || userData.full_name || null)
+        };
+        const upd = await sbFetch(`profiles?id=eq.${p.id}`, {
+          method: 'PATCH',
+          headers: { 'Prefer': 'return=representation' },
+          body: JSON.stringify(merged)
+        });
+        p = (Array.isArray(upd) ? upd : upd) || { ...p, ...merged };
+      }
+
+      if (p) {
+        currentUser = p;
+        localStorage.setItem('nut_user', JSON.stringify(p));
+        updateUserUI();
+      }
+    } catch (e) { console.warn(e); }
+  }
 
   function updateUserUI() {
     if (!currentUser) return;
