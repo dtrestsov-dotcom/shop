@@ -244,14 +244,14 @@
     try {
       let p = null;
       const ex = await sbFetch(`profiles?${col}=eq.${encodeURIComponent(val)}&select=*`);
-      p = Array.isArray(ex) ? ex : ex;
+      p = Array.isArray(ex) ? ex[0] : ex;
 
       const phoneToFind = userData.phone || (p && p.phone) || (currentUser && currentUser.phone);
       let phoneProf = null;
       if (phoneToFind) {
         const clean10 = String(phoneToFind).replace(/\D/g, '').slice(-10);
         if (clean10.length >= 10) {
-          const byPh = await sbFetch(`profiles?phone=ilike.*${clean10}*&select=*`);
+         const byPh = await sbFetch(`profiles?phone=ilike.*${clean10.slice(0,3)}*${clean10.slice(3,6)}*${clean10.slice(6,8)}*${clean10.slice(8,10)}&select=*`);
           const list = Array.isArray(byPh) ? byPh : (byPh ? [byPh] : []);
           phoneProf = list.find(x => !p || x.id !== p.id) || null;
         }
@@ -265,7 +265,7 @@
           headers: { 'Prefer': 'return=representation' },
           body: JSON.stringify(userData)
         });
-        p = Array.isArray(cr) ? cr : cr;
+       p = Array.isArray(cr) ? cr[0] : cr;
       } else {
         if (phoneProf && phoneProf.id !== p.id) {
           await sbFetch(`profiles?id=eq.${phoneProf.id}`, { method: 'DELETE' }).catch(() => {});
