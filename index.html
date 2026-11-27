@@ -368,6 +368,8 @@
       } else if (window.WebApp?.initDataUnsafe?.user) {
         const u = window.WebApp.initDataUnsafe.user;
         await syncProfile({ max_id: String(u.id), full_name: `${u.first_name || ''} ${u.last_name || ''}`.trim() });
+           } else if (currentUser && currentUser.phone) {
+     await syncProfile({ phone: currentUser.phone });
       }
       updateUserUI();
 await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch(() => {});
@@ -688,7 +690,7 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
   function changeQty(i, d) { cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); renderCartItems(); updateCartBar(); }
 
   async function loginViaPhone() {
-    const phone = document.getElementById('phoneLoginInput').value.trim();
+        const phone = formatRUPhone(document.getElementById('phoneLoginInput').value.trim());
     if (!phone) return alert('Введите телефон');
     await syncProfile({ phone, full_name: document.getElementById('nameLoginInput').value.trim() });
     closeModal('authModal');
