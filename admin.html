@@ -504,7 +504,7 @@
   let lastSupplyText = '';
 
    function toggleWeekGroups(w, checked) {
-    document.querySelectorAll(`.sup-grp[data-week="${w}"]`).forEach(c => c.checked = checked);
+    document.querySelectorAll('.sup-grp[data-week="' + w + '"]').forEach(c => c.checked = checked);
   }
 
   function initSupplyFilters(grps) {
