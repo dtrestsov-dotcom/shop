@@ -110,6 +110,9 @@
   .primary-btn { width: 100%; padding: 13px; background: var(--accent); color: #052e16; border: none; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; }
   .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .qty-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-weight: 700; cursor: pointer; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .modal-header h2 { font-size: 18px; font-weight: 800; color: #fff; }
+  .pill-btn { padding: 6px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer; }
 
   </style>
 </head>
@@ -167,20 +170,19 @@
       <button class="close-btn" onclick="closeModal('authModal')">×</button>
     </div>
 
-    <div id="clientCabinet" style="display:none;">
-      <div style="background:#f3f4f6; padding:12px; border-radius:12px; margin-bottom:14px; font-size:13px;">
+        <div id="clientCabinet" style="display:none;">
+      <div style="background:var(--surface-2); border:1px solid var(--border); padding:12px 14px; border-radius:14px; margin-bottom:14px; font-size:13px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <b id="cabName" style="font-size:15px;"></b><br>
+            <b id="cabName" style="font-size:15px; color:#fff;"></b><br>
             <span id="cabPhone" style="color:var(--muted);"></span>
           </div>
-          <button class="pill-btn" style="background:#fee2e2; color:#dc2626;" onclick="clientLogout()">Выйти</button>
+          <button class="pill-btn" style="background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.4); color:#f87171;" onclick="clientLogout()">Выйти</button>
         </div>
       </div>
-      <h3 style="font-size:15px; margin-bottom:10px;">📦 Мои заказы</h3>
+      <h4 style="font-size:15px; margin-bottom:10px; color:#fff;">📦 Мои заказы</h4>
       <div id="myOrdersList" style="font-size:13px; color:var(--muted);">Загружаем историю заказов...</div>
     </div>
-
     <div id="clientLoginForm">
       <button class="auth-btn max" onclick="loginViaMessenger('MAX')">💬 Войти через MAX</button>
       <button class="auth-btn tg" onclick="loginViaMessenger('Telegram')">✈️ Войти через Telegram</button>
@@ -437,24 +439,25 @@ await sbFetch('rpc/refresh_group_dates', { method: 'POST', body: '{}' }).catch((
           ? '<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">Принят в сбор</span>'
           : '<span style="background:#e8f5e9; color:#2e7d32; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">Выдан ✓</span>';
 
-        return `
-          <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; color:var(--text);">
+                return `
+          <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:10px; color:var(--text);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <b>Заказ ${o.order_number} от ${dt}</b>
+              <b style="color:#fff;">Заказ ${o.order_number || '#' + o.id} от ${dt}</b>
               ${statusBadge}
             </div>
-            <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">
-              📍 Группа: <b>${grp ? grp.name : o.group_id}</b>${grp?.delivery_date ? ` • Выдача: <b>${grp.delivery_date}</b>` : ''}
+            <div style="font-size:12px; color:var(--muted); margin-bottom:8px;">
+              📍 Группа: <b style="color:#e5e7eb;">${grp ? grp.name : o.group_id}</b>${grp?.delivery_date ? ` • Выдача: <b style="color:#34d399;">${grp.delivery_date}</b>` : ''}
             </div>
-            <div style="background:#f9fafb; padding:8px; border-radius:8px; font-size:12px; margin-bottom:8px;">
-              ${(o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} шт. — ${i.price * i.qty} ₽`).join('<br>')}
+            <div style="background:var(--bg); border:1px solid var(--border); padding:8px 10px; border-radius:10px; font-size:12px; color:#d1d5db; line-height:1.45; margin-bottom:8px;">
+              ${(o.items || []).map(i => `• ${i.name} (${i.size}) × ${i.qty} шт. — <b>${i.price * i.qty} ₽</b>`).join('<br>')}
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <b>Итого: ${o.total_amount} ₽</b>
-              <button class="pill-btn" onclick="repeatOrder(${idx})">🔄 Повторить заказ</button>
+              <b style="color:#34d399; font-size:14px;">Итого: ${o.total_amount} ₽</b>
+              <button class="pill-btn" style="background:rgba(16,185,129,0.15); border-color:var(--accent); color:#34d399;" onclick="repeatOrder(${idx})">🔄 Повторить заказ</button>
             </div>
           </div>`;
       }).join('');
+
     } catch (err) {
       list.innerHTML = `<p style="color:#dc2626;">Ошибка загрузки: ${err.message}</p>`;
     }
