@@ -362,7 +362,7 @@
     document.getElementById('pDesc').value = p.description || '';
     document.getElementById('pStock').value = p.stock_kg;
     if (document.getElementById('pBasePrice')) document.getElementById('pBasePrice').value = '';
-    document.getElementById('pVariantsText').value = (p.variants || []).map(v => `${v.size}=${v.price}`).join(', ');
+   document.getElementById('pVariantsText').value = (p.variants || []).map(v => v.size + '=' + v.price).join(', ');
     document.getElementById('pBoxWeight').value = p.box_weight_kg || 5;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
