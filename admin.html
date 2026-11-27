@@ -275,7 +275,7 @@
       onCatSelectChange();
     }
 
-    document.getElementById('productsList').innerHTML = allProducts.map(p => `
+        document.getElementById('productsList').innerHTML = allProducts.map(p => `
       <div class="card" style="${p.is_active ? '' : 'opacity:0.6;'}">
         <div class="row" style="justify-content:space-between; margin-bottom:6px;">
           <div style="display:flex;gap:10px;align-items:center;">
@@ -285,9 +285,9 @@
             </div>
           </div>
           <div class="row">
-            <button class="btn sm" style="background:#2563eb;" onclick="editProd(`${p.id}`)">✏️ Изм.</button>
-            <button class="btn sm gray" onclick="togProd(`${p.id}`,${!p.is_active})">${p.is_active ? 'Скрыть' : 'Показать'}</button>
-            <button class="btn sm" style="background:#dc2626;" onclick="delProd(`${p.id}`)">🗑️</button>
+            <button class="btn sm" style="background:#2563eb;" onclick="editProd('${p.id}')">✏️ Изм.</button>
+            <button class="btn sm gray" onclick="togProd('${p.id}',${!p.is_active})">${p.is_active ? 'Скрыть' : 'Показать'}</button>
+            <button class="btn sm" style="background:#dc2626;" onclick="delProd('${p.id}')">🗑️</button>
           </div>
         </div>
         <div class="row" style="justify-content:space-between; background:#f9fafb; padding:6px 8px; border-radius:8px;">
@@ -296,18 +296,18 @@
               <span style="font-size:12px;">${v.size}:</span>
               <input type="number" id="pr-${p.id}-${idx}" value="${v.price}" style="width:62px;padding:4px;border:1px solid #ccc;border-radius:6px;"> ₽
             `).join('')}
-            <button class="btn sm" style="background:#059669;" onclick="updPrices(`${p.id}`)">₽ ✓</button>
+            <button class="btn sm" style="background:#059669;" onclick="updPrices('${p.id}')">₽ ✓</button>
           </div>
-                   <div class="row" style="gap:6px;">
+          <div class="row" style="gap:6px;">
             <span style="font-size:12px;">Кор.:</span>
             <input type="number" step="0.1" id="box-${p.id}" value="${p.box_weight_kg || 5}" style="width:50px;padding:4px;border:1px solid #ccc;border-radius:6px;">
-            <button class="btn sm" style="background:#7c3aed;" onclick="updBox(`${p.id}`)">📦 ✓</button>
+            <button class="btn sm" style="background:#7c3aed;" onclick="updBox('${p.id}')">📦 ✓</button>
             <span style="font-size:12px; margin-left:4px;">Мин.:</span>
             <input type="number" step="0.1" id="min-${p.id}" value="${p.min_stock_kg || 0}" style="width:50px;padding:4px;border:1px solid #ccc;border-radius:6px;">
-            <button class="btn sm" style="background:#d97706;" onclick="updMinStk(`${p.id}`)">Мин ✓</button>
+            <button class="btn sm" style="background:#d97706;" onclick="updMinStk('${p.id}')">Мин ✓</button>
             <span style="font-size:12px; margin-left:4px;">Ост.:</span>
             <input type="number" step="0.1" id="stk-${p.id}" value="${p.stock_kg}" style="width:56px;padding:4px;border:1px solid #ccc;border-radius:6px;">
-            <button class="btn sm" onclick="updStk(`${p.id}`)">Кг ✓</button>
+            <button class="btn sm" onclick="updStk('${p.id}')">Кг ✓</button>
           </div>
         </div>
       </div>`).join('');
